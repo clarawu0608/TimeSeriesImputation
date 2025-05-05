@@ -1,0 +1,10 @@
+dataset/
+scripts/
+results/
+outputs/
+checkpoints/
+venv/
+*.pyc
+__pycache__/
+*.pkl
+*.pklz

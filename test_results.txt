@@ -1,0 +1,300 @@
+outputs/0430_64_8_0_1_3_0.15/
+Masked MSE on test set:0.0010234210394467927
+Linearinterpolation MSE:7.4710283e-06
+Cubicinterpolation MSE:1.9749143e-06
+
+outputs/0430_64_8_0_1_3_0.25/
+Masked MSE on test set:0.0005999637221273804
+Linearinterpolation MSE:1.4783328e-06
+Cubicinterpolation MSE:1.1259765e-05
+
+outputs/0430_64_8_0_1_3_0.35/
+Masked MSE on test set:0.0009448110793748875
+Linearinterpolation MSE:3.2575304e-06
+Cubicinterpolation MSE:2.4717945e-05
+
+outputs/0430_64_8_0_1_3_0.45/
+Masked MSE on test set:0.0003682405919914897
+Linearinterpolation MSE:6.466069e-06
+Cubicinterpolation MSE:4.4858457e-06
+
+outputs/0430_64_8_0_1_5_0.15/
+Masked MSE on test set:0.00010607331586717118
+Linearinterpolation MSE:0.008205037
+Cubicinterpolation MSE:0.011794595
+
+outputs/0430_64_8_0_1_5_0.25/
+Masked MSE on test set:0.0009069139081104861
+Linearinterpolation MSE:2.9793637e-07
+Cubicinterpolation MSE:1.5542516e-06
+
+outputs/0430_64_8_0_1_5_0.35/
+Masked MSE on test set:0.0006245676407585531
+Linearinterpolation MSE:3.2837084e-05
+Cubicinterpolation MSE:1.5085501e-05
+
+outputs/0430_64_8_0_1_5_0.45/
+Masked MSE on test set:0.0005212703992237744
+Linearinterpolation MSE:1.7384515e-05
+Cubicinterpolation MSE:1.1772787e-05
+
+outputs/0430_64_8_0_1_7_0.15/
+Masked MSE on test set:0.0018098310962437144
+Linearinterpolation MSE:5.5869996e-06
+Cubicinterpolation MSE:3.645115e-06
+
+outputs/0430_64_8_0_1_7_0.25/
+Masked MSE on test set:0.00018748493354810072
+Linearinterpolation MSE:4.451045e-06
+Cubicinterpolation MSE:0.0072017745
+
+outputs/0430_64_8_0_1_7_0.35/
+Masked MSE on test set:0.0010376850577751512
+Linearinterpolation MSE:0.0011281272
+Cubicinterpolation MSE:4.8620086
+
+outputs/0430_64_8_0_1_7_0.45/
+Masked MSE on test set:0.0008555691034241762
+Linearinterpolation MSE:3.757832e-05
+Cubicinterpolation MSE:0.43415374
+
+outputs/0430_64_8_0_1_10_0.15/
+Masked MSE on test set:0.0008939703932584607
+Linearinterpolation MSE:nan
+Cubicinterpolation MSE:nan
+
+outputs/0430_64_8_0_1_10_0.25/
+Masked MSE on test set:0.0004836163805336257
+Linearinterpolation MSE:0.00029740832
+Cubicinterpolation MSE:2.0862184
+
+outputs/0430_64_8_0_1_10_0.35/
+Masked MSE on test set:0.0007729683599926677
+Linearinterpolation MSE:7.9674915e-05
+Cubicinterpolation MSE:9.286926e-05
+
+outputs/0430_64_8_0_1_10_0.45/
+Masked MSE on test set:0.0008094438641993501
+Linearinterpolation MSE:2.151514e-05
+Cubicinterpolation MSE:0.0010022561
+
+outputs/0430_64_8_0_1_15_0.15/
+Masked MSE on test set:0.00036013416834943706
+Linearinterpolation MSE:1.4857177e-05
+Cubicinterpolation MSE:9.732282e-06
+
+outputs/0430_64_8_0_1_15_0.25/
+Masked MSE on test set:0.001161365044382001
+Linearinterpolation MSE:0.00010227051
+Cubicinterpolation MSE:5.826337e-05
+
+outputs/0430_64_8_0_1_15_0.35/
+Masked MSE on test set:0.00067468930688762
+Linearinterpolation MSE:1.7429173e-06
+Cubicinterpolation MSE:1.3667413e-06
+
+outputs/0430_64_8_0_1_15_0.45/
+Masked MSE on test set:0.0006822075568150986
+Linearinterpolation MSE:0.0012872575
+Cubicinterpolation MSE:0.17979696
+
+outputs/0430_64_8_0_1_20_0.15/
+Masked MSE on test set:0.0013146584467912928
+Linearinterpolation MSE:nan
+Cubicinterpolation MSE:nan
+
+outputs/0430_64_8_0_1_20_0.25/
+Masked MSE on test set:0.0007954880525836163
+Linearinterpolation MSE:0.00014376732
+Cubicinterpolation MSE:1.954647
+
+outputs/0430_64_8_0_1_20_0.35/
+Masked MSE on test set:0.0008788955920730994
+Linearinterpolation MSE:0.00081679237
+Cubicinterpolation MSE:5.804711
+
+outputs/0430_64_8_0_1_20_0.45/
+Masked MSE on test set:0.0007155718961293333
+Linearinterpolation MSE:5.0936684e-05
+Cubicinterpolation MSE:0.00014293895
+
+outputs/0430_64_8_0_1_25_0.15/
+Masked MSE on test set:0.0013794140667491796
+Linearinterpolation MSE:4.4920005e-05
+Cubicinterpolation MSE:8.122205e-05
+
+outputs/0430_64_8_0_1_25_0.25/
+Masked MSE on test set:0.0006472237390551571
+Linearinterpolation MSE:nan
+Cubicinterpolation MSE:nan
+
+outputs/0430_64_8_0_1_25_0.35/
+Masked MSE on test set:0.0009145927975169559
+Linearinterpolation MSE:7.482593e-05
+Cubicinterpolation MSE:0.26524794
+
+outputs/0430_64_8_0_1_25_0.45/
+Masked MSE on test set:0.0007999800367473759
+Linearinterpolation MSE:0.0014877466
+Cubicinterpolation MSE:111.16998
+
+-----------------------------------------1
+
+outputs/0430_64_8_0_1_20_0.15/
+Masked MSE on test set:1.0824959280118163
+Linearinterpolation MSE:0.005879936
+Cubicinterpolation MSE:0.0014214831
+
+outputs/0430_64_8_0_1_20_0.25/
+Masked MSE on test set:1.1714894158182023
+Linearinterpolation MSE:0.0649144
+Cubicinterpolation MSE:1.6465888
+
+outputs/0430_64_8_0_1_20_0.35/
+Masked MSE on test set:1.0001133017734376
+Linearinterpolation MSE:0.026233118
+Cubicinterpolation MSE:0.03373026
+
+outputs/0430_64_8_0_1_20_0.45/
+Masked MSE on test set:0.6861374139363198
+Linearinterpolation MSE:0.072267696
+Cubicinterpolation MSE:28.22929
+
+-----------------------------------------2
+outputs/0430_64_8_0_1_20_0.15/
+Masked MSE on test set:1.1716903700396581
+Linearinterpolation MSE:0.0042055203
+Cubicinterpolation MSE:0.01140011
+
+outputs/0430_64_8_0_1_20_0.25/
+Masked MSE on test set:0.7414511837353114
+Linearinterpolation MSE:nan
+Cubicinterpolation MSE:nan
+
+-----------------------------------------3
+
+outputs/0430_128_16_4_1_15_0.3/
+Masked MSE on test set:0.6711649547995974
+Linear interpolation average MSE: 4.388312
+Cubic interpolation average MSE: 330776.218750
+
+outputs/0430_128_16_4_1_15_0.4/
+Masked MSE on test set:0.7400275346604983
+Linear interpolation average MSE: 4.478482
+Cubic interpolation average MSE: 469937.437500
+
+outputs/0430_128_16_4_1_15_0.5/
+Masked MSE on test set:0.6301655566861497
+Linear interpolation average MSE: 6.271199
+Cubic interpolation average MSE: 133830.312500
+
+outputs/0430_128_16_4_1_15_0.6/
+Masked MSE on test set:0.6327420889595866
+Linear interpolation average MSE: 37.118629
+Cubic interpolation average MSE: 69794360.000000
+
+outputs/0430_128_16_4_1_20_0.3/
+Masked MSE on test set:0.637267406356429
+Linear interpolation average MSE: 3.894906
+Cubic interpolation average MSE: 8746219.000000
+
+outputs/0430_128_16_4_1_20_0.4/
+Masked MSE on test set:0.6758704164978417
+Linear interpolation average MSE: 11.357194
+Cubic interpolation average MSE: 4318911.000000
+
+outputs/0430_128_16_4_1_20_0.5/
+Masked MSE on test set:0.596808619846345
+Linear interpolation average MSE: 146.662796
+Cubic interpolation average MSE: 1000180416.000000
+
+------------------------------------------high_freq_3000
+outputs/0430_128_16_4_1_15_0.3/
+Masked MSE on test set:0.0009265989607524507
+Linear interpolation average MSE: 44.343678
+Cubic interpolation average MSE: 2117424.750000
+
+outputs/0430_128_16_4_1_15_0.4/
+Masked MSE on test set:0.0014396130949068584
+Linear interpolation average MSE: 44.145462
+Cubic interpolation average MSE: 3378785.500000
+
+outputs/0430_128_16_4_1_15_0.5/
+Masked MSE on test set:0.0017035608125192875
+Linear interpolation average MSE: 57.416969
+Cubic interpolation average MSE: 4017064.750000
+
+outputs/0430_128_16_4_1_15_0.6/
+Masked MSE on test set:0.006407958755239844
+Linear interpolation average MSE: nan
+Cubic interpolation average MSE: 10119263.000000
+
+-----------------------------------------high_freq_100
+
+outputs/100_128_16_4_1_15_0.3/
+Masked MSE on test set:0.0015072747842388063
+Linear interpolation average MSE: 0.018482
+Cubic interpolation average MSE: 0.000887
+
+outputs/100_128_16_4_1_15_0.4/
+Masked MSE on test set:0.003040231649568067
+Linear interpolation average MSE: 0.027040
+Cubic interpolation average MSE: 0.002041
+
+outputs/100_128_16_4_1_15_0.5/
+Masked MSE on test set:0.0017401437311229376
+Linear interpolation average MSE: 0.032057
+Cubic interpolation average MSE: 0.001452
+
+outputs/100_128_16_4_1_15_0.6/
+Masked MSE on test set:0.004025477171671398
+Linear interpolation average MSE: nan
+Cubic interpolation average MSE: 0.010238
+
+---------------------------------------------------long term
+outputs/longterm_128_16_4_1_15_0.3/
+Masked MSE on test set:0.7166133421402423
+Linear interpolation average MSE: 52.042706
+Cubic interpolation average MSE: 84624168.000000
+
+outputs/longterm_128_16_4_1_15_0.3/
+Masked MSE on test set:0.7188998586835921
+Linear interpolation average MSE: 46.309742
+Cubic interpolation average MSE: 59334276.000000
+
+outputs/longterm_128_16_4_1_15_0.4/
+Masked MSE on test set:0.714531174149315
+Linear interpolation average MSE: 73.420013
+Cubic interpolation average MSE: 383418560.000000
+
+outputs/longterm_128_16_4_1_15_0.5/
+Masked MSE on test set:0.7273773757140009
+Linear interpolation average MSE: 84.764465
+Cubic interpolation average MSE: 325478880.000000
+
+outputs/longterm_128_16_4_1_15_0.6/
+Masked MSE on test set:0.7100798549978865
+Linear interpolation average MSE: nan
+Cubic interpolation average MSE: 1026755328.000000
+
+---------------------------------------------period
+outputs/period_128_16_4_1_15_0.3/
+Masked MSE on test set:0.015680455747724642
+Linear interpolation average MSE: 9.784454
+Cubic interpolation average MSE: 87738.031250
+
+outputs/period_128_16_4_1_15_0.4/
+Masked MSE on test set:0.0083510822466607
+Linear interpolation average MSE: 10.940597
+Cubic interpolation average MSE: 222636.515625
+
+outputs/period_128_16_4_1_15_0.5/
+Masked MSE on test set:0.023088314310775654
+Linear interpolation average MSE: 15.102368
+Cubic interpolation average MSE: 262841.875000
+
+outputs/period_128_16_4_1_15_0.6/
+Masked MSE on test set:0.04069114581433153
+Linear interpolation average MSE: nan
+Cubic interpolation average MSE: 252426.781250
+
