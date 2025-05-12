@@ -21,13 +21,17 @@ parser.add_argument("--lm", type=int, default=10)
 parser.add_argument("--missing_rate", type=float, default=0.25)
 args = parser.parse_args()
 
+# Device setup
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
+
 # Output path
-output_path = "outputs/period_{}_{}_{}_{}_{}_{}/".format(
+output_path = "outputs/normal/high_freq/3000_{}_{}_{}_{}_{}_{}/".format(
     args.seq_len, args.token_size, args.token_overlap, args.missing_type, args.lm, args.missing_rate)
 os.makedirs(output_path, exist_ok=True)
 
 # Read data
-df = pd.read_csv("dataset/periodic_signal.csv", parse_dates=["date"])
+df = pd.read_csv("dataset/cosine_wave_3000.csv", parse_dates=["date"])
 data = df.iloc[:, 1].values.astype(np.float32)
 
 # Normalize data
@@ -107,11 +111,14 @@ full_dataset = TimeSeriesDataset(data, masked_data, mask_matrix, args.seq_len)
 train_size = int(0.7 * len(full_dataset))
 val_size = int(0.15 * len(full_dataset))
 test_size = len(full_dataset) - train_size - val_size
-train_set, val_set, test_set = random_split(full_dataset, [train_size, val_size, test_size])
+train_set, val_set, test_set = random_split(full_dataset, [train_size, val_size, test_size], generator=torch.Generator().manual_seed(42))
+train_indices = train_set.indices
+val_indices = val_set.indices
+test_indices = test_set.indices
 
 train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True)
 val_loader = DataLoader(val_set, batch_size=args.batch_size)
-test_loader = DataLoader(test_set, batch_size=1)
+test_loader = DataLoader(test_set, batch_size=args.batch_size)
 
 # Transformer model with attention map capture
 class PatchEmbedding(nn.Module):
@@ -127,7 +134,7 @@ class PatchEmbedding(nn.Module):
         return patches
     
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, max_len=500):
+    def __init__(self, d_model, max_len=30000):
         super().__init__()
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len).unsqueeze(1)
@@ -137,6 +144,8 @@ class PositionalEncoding(nn.Module):
         self.pe = pe.unsqueeze(0)  # [1, max_len, d_model]
 
     def forward(self, x):
+        if x.size(1) > self.pe.size(1):
+            raise ValueError(f"PositionalEncoding max_len={self.pe.size(1)} is too small for input sequence length {x.size(1)}.")
         return x + self.pe[:, :x.size(1)].to(x.device)
 
 class CustomTransformerEncoderLayer(nn.Module):
@@ -174,7 +183,7 @@ class TransformerEncoder(nn.Module):
         self.attn_weights = None
         self.mask_token = nn.Parameter(torch.randn(1))
 
-    def forward(self, x):
+    def forward(self, x, mask=None):
         x = torch.where(mask, x, self.mask_token.expand_as(x))
         B, L = x.shape
         patches = x.unfold(1, args.token_size, args.token_size - args.token_overlap)
@@ -193,7 +202,7 @@ class TransformerEncoder(nn.Module):
             out = torch.cat([out, pad], dim=1)
         return out
 
-model = TransformerEncoder()
+model = TransformerEncoder().to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epoch_num)
@@ -207,18 +216,20 @@ for epoch in range(args.epoch_num):
     model.train()
     train_loss = 0
     for gt, masked, mask in train_loader:
+        gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
         optimizer.zero_grad()
-        out = model(masked)
+        out = model(masked, mask)
         loss = criterion(out, gt)
         loss.backward()
-        optimizer.step()
+        optimizer.step(), mask
         train_loss += loss.item()
 
     model.eval()
     val_loss = 0
     with torch.no_grad():
         for gt, masked, mask in val_loader:
-            out = model(masked)
+            gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+            out = model(masked, mask)
             loss = criterion(out, gt)
             val_loss += loss.item()
 
@@ -249,28 +260,54 @@ plt.title("Loss Curve")
 plt.savefig(f"{output_path}loss_curve.png")
 
 # Plot one attention map
-if last_attn_weights is not None:
-    plt.figure(figsize=(6, 5))
-    plt.imshow(last_attn_weights[0].cpu(), cmap='viridis')
-    plt.colorbar()
-    plt.title("Attention Map")
-    plt.savefig(f"{output_path}attention_map.png")
+for i in range(len(model.layers)):
+    if hasattr(model.layers[i], 'attn_weights') and model.layers[i].attn_weights is not None:
+        attn_map = model.layers[-1].attn_weights[0].cpu().numpy()
+        plt.figure(figsize=(6, 5))
+        plt.imshow(attn_map, cmap='viridis')
+        plt.colorbar()
+        plt.title("Attention Map Layer {}".format(i))
+        plt.savefig(f"{output_path}/attention_map_layer{i}.png")
 
 # Test and baseline comparison
+
+# For denormalization
+def denormalize(x, data_std, data_mean):
+    return x * data_std + data_mean
+
+# For reconstructing overlapping predictions (assuming summing and counting)
+def reconstruct(pred_patches, count_map):
+    return np.divide(pred_patches, count_map, out=np.zeros_like(pred_patches), where=count_map != 0)
+
+
 model.load_state_dict(torch.load("best_model.pth"))
 model.eval()
 mse_total, count = 0, 0
 
 for i, (gt, masked, mask) in enumerate(test_loader):
+    gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
     with torch.no_grad():
-        out = model(masked)
-    mse_total += ((out - gt)[~mask]).pow(2).sum().item()
-    count += (~mask).sum().item()
+        out = model(masked, mask)
+
+    # Convert tensors to numpy
+    gt_np = gt[0].cpu().numpy()
+    out_np = out[0].cpu().numpy()
+    mask_np = mask[0].cpu().numpy()
+
+    # Denormalize
+    gt_denorm = denormalize(gt_np, data_std, data_mean)
+    out_denorm = denormalize(out_np, data_std, data_mean)
+
+    # Compute masked MSE
+    mse_total += ((out_denorm[~mask_np] - gt_denorm[~mask_np]) ** 2).sum()
+    count += (~mask_np).sum()
+
+    # Plotting
     if i < 2:
         plt.figure()
-        plt.plot(gt[0], label="GT")
-        plt.plot(out[0], label="Output")
-        plt.plot(mask[0] * max(gt[0]), label="Mask")
+        plt.plot(gt_denorm, label="GT")
+        plt.plot(out_denorm, label="Output")
+        plt.plot(mask_np * max(gt_denorm), label="Mask")
         plt.legend()
         plt.title(f"Test Case {i}")
         plt.savefig(f"{output_path}test_case_{i}.png")
@@ -281,8 +318,7 @@ with open("test_results.txt", "a") as log_file:
     print("Writing to file...")
     log_file.write(output_path + "\n")
     log_file.write("Masked MSE on test set:" + str(mse_total / count) + "\n")
-
-
+    
 # Baseline interpolation across all test samples
 x = np.arange(args.seq_len)
 

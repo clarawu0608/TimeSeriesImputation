@@ -298,3 +298,253 @@ Masked MSE on test set:0.04069114581433153
 Linear interpolation average MSE: nan
 Cubic interpolation average MSE: 252426.781250
 
+------------------------------------------------frequency analysis
+outputs/period_128_16_4_1_15_0.3/
+Masked MSE on test set:0.009781695717935657
+Linear interpolation average MSE: 8.861081
+Cubic interpolation average MSE: 57801.636719
+
+outputs/0505_128_16_4_1_15_0.3/
+Masked MSE on test set:0.33304829266523645
+Linear interpolation average MSE: 20.624928
+Cubic interpolation average MSE: 7483902.000000
+
+outputs/0505_128_16_4_1_15_0.4/
+Masked MSE on test set:0.3759483221083071
+Linear interpolation average MSE: 19.259884
+Cubic interpolation average MSE: 6048506.000000
+
+outputs/0505_128_16_4_1_15_0.5/
+Masked MSE on test set:0.362050272203756
+Linear interpolation average MSE: 28.264650
+Cubic interpolation average MSE: 17316866.000000
+
+outputs/test_128_16_4_1_15_0.3/
+Masked MSE on test set:0.006944082943684155
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.00690585087749719
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.01064689831110911
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.009475229121718762
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.00943646535154045
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.006607659188757547
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.012556149618444026
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.011955516212914416
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.007109590695832293
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.009432619154675989
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 1.556381
+outputs/test1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.007667176847144364
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 1.551753
+outputs/test2_128_16_4_1_15_0.3/
+Masked MSE on test set:0.030017770706726985
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test2_128_16_4_1_15_0.3/
+Masked MSE on test set:0.042253802692937534
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test2_128_16_4_1_15_0.3/
+Masked MSE on test set:0.026838074256673335
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test2_128_16_4_1_15_0.3/
+Masked MSE on test set:0.02747400393773076
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test2_128_16_4_1_15_0.3/
+Masked MSE on test set:0.024428224266893603
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 1.489416
+outputs/test3_128_16_4_1_15_0.3/
+Masked MSE on test set:0.02387338042464765
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test3_128_16_4_1_15_0.3/
+Masked MSE on test set:0.04055543849918472
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 1.663611
+outputs/test4_128_16_4_1_15_0.3/
+Masked MSE on test set:0.041824589051606194
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test4_128_16_4_1_15_0.3/
+Masked MSE on test set:0.047013661771871953
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 0.816689
+outputs/test4_128_16_4_1_15_0.3/
+Masked MSE on test set:0.03465112333971929
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test4_128_16_4_1_15_0.3/
+Masked MSE on test set:0.038180210483298505
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/test4_128_16_4_1_15_0.3/
+Masked MSE on test set:0.05080826031016896
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 0.801280
+outputs/test4_128_16_4_1_15_0.3/
+Masked MSE on test set:0.030313273474984068
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 0.917252
+outputs/test4_128_16_4_1_15_0.3/
+Masked MSE on test set:0.028278101740842172
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+
+Total reconstructed test MSE: 0.876616
+
+
+[Baseline] Masked MSE on test set: 0.12049747822640298
+Masked MSE on test set: 0.11964099786339644
+
+outputs/multivariate/test2_128_16_0_100_0_1_15_0.3/
+[Baseline] Masked MSE on test set:0.15835596417041273
+[Model] Masked MSE on test set:0.19772421278185917
+
+outputs/multivariate/test2_128_16_0_300_0_1_15_0.3/
+[Baseline] Masked MSE on test set:0.15839307313575401
+[Model] Masked MSE on test set:0.15834439268826242
+
+
+outputs/multivariate/test2_128_16_0_300_0_1_15_0.4/
+[Baseline] Masked MSE on test set:0.15947362742744522
+[Model] Masked MSE on test set:0.15863173162739816
+
+
+outputs/multivariate/test2_128_16_0_300_0_1_15_0.5/
+[Baseline] Masked MSE on test set:0.15996364150422818
+[Model] Masked MSE on test set:0.15936687512212022
+
+
+outputs/multivariate/test3_80_80_0_100_0_1_15_0.3/
+[Baseline] Masked MSE on test set:0.2590958267511307
+
+outputs/multivariate/test3_80_16_0_100_0_1_15_0.3/
+[Baseline] Masked MSE on test set:0.2516865919372022
+[Multi] Masked MSE on test set:0.2352793294639446
+[2D] Masked MSE on test set:0.15593261992559562
+
+
+outputs/normal/high_freq/100_128_16_4_1_15_0.3/
+Masked MSE on test set:0.0002314790992024413
+Linear interpolation average MSE: 0.020628
+Cubic interpolation average MSE: 0.000931
+
+outputs/normal/high_freq/3000_128_16_4_1_15_0.3/
+Masked MSE on test set:0.0003862065478598442
+Linear interpolation average MSE: 46.924541
+Cubic interpolation average MSE: 3950195.250000
+
+outputs/normal/periodic/0512_128_16_4_1_15_0.3/
+Masked MSE on test set:0.020303804671969607
+Linear interpolation average MSE: 9.232132
+Cubic interpolation average MSE: 95537.632812
+
+outputs/normal/long_term/50_0.1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.04457644397745614
+Linear interpolation average MSE: 79.690910
+Cubic interpolation average MSE: 149552224.000000
+
+outputs/normal/long_term/128_0.1_128_16_4_1_15_0.3/
+Masked MSE on test set:0.04241564449847945
+Linear interpolation average MSE: 100.923698
+Cubic interpolation average MSE: 217123504.000000
+
+outputs/multivariate/test3_80_16_0_100_0_1_15_0.3/
+[Baseline] Masked MSE on test set:0.23460987556113472
+[Multi] Masked MSE on test set:0.1945768626315762
+[2D] Masked MSE on test set:0.15149061267944217
+
+outputs/normal/long_term/128_0.05_128_16_4_1_15_0.3/
+Masked MSE on test set:0.04112292630073452
+Linear interpolation average MSE: 86.849709
+Cubic interpolation average MSE: 357401472.000000
+
+outputs/normal/periodic/cos2000t_128_16_4_1_15_0.3/
+Masked MSE on test set:0.0013392054377194915
+Linear interpolation average MSE: 23.729473
+Cubic interpolation average MSE: 308335.250000
+
+outputs/normal/periodic/cos2800t_128_16_4_1_15_0.3/
+Masked MSE on test set:7.389346259934999e-05
+Linear interpolation average MSE: 39.034184
+Cubic interpolation average MSE: 2174408.250000
+
+outputs/normal/periodic/sin800t_128_16_4_1_15_0.3/
+Masked MSE on test set:0.004502819618957537
+Linear interpolation average MSE: 4.728168
+Cubic interpolation average MSE: 1612.468872
+
+outputs/normal/periodic/sin1200t_128_16_4_1_15_0.3/
+Masked MSE on test set:0.0007522539595733901
+Linear interpolation average MSE: 9.006486
+Cubic interpolation average MSE: 15892.724609
+
