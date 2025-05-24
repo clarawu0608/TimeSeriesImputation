@@ -15,7 +15,7 @@ dropout=(0.1)
 
 # Loop over 20 input files
 for i in $(seq 1 20); do
-  input_file="dataset/traffic_20col/traffic_single_${i}.csv"
+  input_file="dataset/traffic/traffic_20col/traffic_single_${i}.csv"
 
   # Loop through all combinations
   for seq_len in "${seq_len[@]}"; do
@@ -30,13 +30,13 @@ for i in $(seq 1 20); do
                 for dropout in "${dropout[@]}"; do
 
                   # Define unique output directory for each experiment
-                  output_dir="outputs/traffic_20col/file${i}/s${seq_len}_t${token_size}_o${token_overlap}_lm${lm}_mr${missing_rate}_nh${nhead}_lr${loss_r}_dr${dropout}/"
+                  output_dir="outputs/missEmbedding_test/traffic_20col/file${i}/s${seq_len}_t${token_size}_o${token_overlap}_lm${lm}_mr${missing_rate}_nh${nhead}_lr${loss_r}_dr${dropout}/"
 
                   echo "Running on file $input_file"
                   echo "  -> Output: $output_dir"
 
                   # Run the experiment
-                  python -u run.py \
+                  python -u run_test.py \
                     --data_path "$input_file" \
                     --output_path "$output_dir" \
                     --batch_size 16 \

@@ -682,13 +682,14 @@ for i, (gt, masked, mask) in enumerate(test_loader):
     count_b += (~mask_np).sum()
 
     if i < 2:
-        plt.figure()
-        plt.plot(gt_denorm[:, 0], label="GT")
-        plt.plot(out_denorm[:, 0], label="Output")
-        plt.plot(mask_np[:, 0] * np.max(gt_denorm[:, 0]), label="Mask")
-        plt.legend()
-        plt.title(f"Baseline Test Case {i}")
-        plt.savefig(f"{baseline_output_path}/test_case_{i}.png")
+        for j in range (0, 20):
+            plt.figure()
+            plt.plot(gt_denorm[0, :, j], label="GT")
+            plt.plot(out_denorm[0, :, j], label="Output")
+            plt.plot(mask_np[0, :, j] * np.max(gt_denorm[:, 0]), label="Mask")
+            plt.legend()
+            plt.title(f"Baseline Test Case {i} column {j}")
+            plt.savefig(f"{baseline_output_path}/test_case_{i}/column_{j}.png")
 
 print("[Baseline] Masked MSE on test set:", mse_total_b / count_b)
 with open("test_results.txt", "a") as log_file:
@@ -943,13 +944,14 @@ for i, (gt, masked, mask) in enumerate(test_loader):
     count += (~mask_np).sum()
 
     if i < 2:
-        plt.figure()
-        plt.plot(gt_denorm[:, 0], label="GT")
-        plt.plot(out_denorm[:, 0], label="Output")
-        plt.plot(mask_np[:, 0] * np.max(gt_denorm[:, 0]), label="Mask")
-        plt.legend()
-        plt.title(f"Test Case {i}")
-        plt.savefig(f"{twoD_output_path}/test_case_{i}.png")
+        for j in range (0, 20):
+            plt.figure()
+            plt.plot(gt_denorm[0, :, j], label="GT")
+            plt.plot(out_denorm[0, :, j], label="Output")
+            plt.plot(mask_np[0, :, j] * np.max(gt_denorm[:, 0]), label="Mask")
+            plt.legend()
+            plt.title(f"Baseline Test Case {i} column {j}")
+            plt.savefig(f"{baseline_output_path}/test_case_{i}/column_{j}.png")
 
 print("[2D] Masked MSE on test set:", mse_total / count)
 with open("test_results.txt", "a") as log_file:

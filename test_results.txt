@@ -1771,3 +1771,243 @@ Masked MSE on test set:0.00012929431289706472
 Linear interpolation average MSE: 3.475641
 Nearest interpolation average MSE: 1.814478
 
+LSTM Masked MSE on test set: 0.038704
+outputs/missEmbedding_test/traffic_20col/file1/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.15731893172607805
+Linear interpolation average MSE: 9.155655
+Nearest interpolation average MSE: 1.656436
+
+LSTM Masked MSE on test set: 0.031672
+outputs/missEmbedding_test/traffic_20col/file2/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.14508926156259835
+Linear interpolation average MSE: 10.792496
+Nearest interpolation average MSE: 1.871271
+
+LSTM Masked MSE on test set: 0.042245
+outputs/missEmbedding_test/traffic_20col/file3/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.14255777610560277
+Linear interpolation average MSE: 4.531751
+Nearest interpolation average MSE: 1.683560
+
+LSTM Masked MSE on test set: 0.041431
+outputs/missEmbedding_test/traffic_20col/file4/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.14925949389656124
+Linear interpolation average MSE: 5.467402
+Nearest interpolation average MSE: 1.422819
+
+LSTM Masked MSE on test set: 0.031822
+outputs/missEmbedding_test/traffic_20col/file5/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.08012658426286591
+Linear interpolation average MSE: 12.871084
+Nearest interpolation average MSE: 1.629393
+
+LSTM Masked MSE on test set: 0.037084
+outputs/missEmbedding_test/traffic_20col/file6/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.08460555420306107
+Linear interpolation average MSE: 6.112525
+Nearest interpolation average MSE: 1.486274
+
+LSTM Masked MSE on test set: 0.035976
+outputs/missEmbedding_test/traffic_20col/file7/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.07819129528397466
+Linear interpolation average MSE: 3.680933
+Nearest interpolation average MSE: 1.518548
+
+LSTM Masked MSE on test set: 0.042146
+outputs/missEmbedding_test/traffic_20col/file8/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.07052046139734813
+Linear interpolation average MSE: 3.874002
+Nearest interpolation average MSE: 1.796820
+
+LSTM Masked MSE on test set: 0.025560
+outputs/missEmbedding_test/traffic_20col/file9/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.05905520037205894
+Linear interpolation average MSE: 3.437319
+Nearest interpolation average MSE: 1.458129
+
+LSTM Masked MSE on test set: 0.055321
+outputs/missEmbedding_test/traffic_20col/file10/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.25700959471887785
+Linear interpolation average MSE: 13.079980
+Nearest interpolation average MSE: 1.968464
+
+LSTM Masked MSE on test set: 0.037864
+outputs/traffic_20col/file6/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.06438944633178903
+Linear interpolation average MSE: 6.112525
+Nearest interpolation average MSE: 1.486274
+
+LSTM Masked MSE on test set: 0.048998
+outputs/missEmbedding_test/traffic_20col/file11/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.15980919683958925
+Linear interpolation average MSE: 31.026823
+Nearest interpolation average MSE: 1.827958
+
+LSTM Masked MSE on test set: 0.040640
+outputs/missEmbedding_test/traffic_20col/file12/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.1065965382903486
+Linear interpolation average MSE: 6.288437
+Nearest interpolation average MSE: 1.798023
+
+LSTM Masked MSE on test set: 0.069989
+outputs/missEmbedding_test/traffic_20col/file13/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.23474384676483318
+Linear interpolation average MSE: 12.270107
+Nearest interpolation average MSE: 1.571559
+
+LSTM Masked MSE on test set: 0.039339
+outputs/traffic_20col/file7/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.06472051162407538
+Linear interpolation average MSE: 3.680933
+Nearest interpolation average MSE: 1.518548
+
+LSTM Masked MSE on test set: 0.031901
+outputs/missEmbedding_test/traffic_20col/file14/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.11871412815745987
+Linear interpolation average MSE: 3.898593
+Nearest interpolation average MSE: 1.544488
+
+LSTM Masked MSE on test set: 0.038082
+outputs/missEmbedding_test/traffic_20col/file15/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.11084489255046034
+Linear interpolation average MSE: 3.067881
+Nearest interpolation average MSE: 1.373215
+
+LSTM Masked MSE on test set: 0.046628
+outputs/missEmbedding_test/traffic_20col/file16/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.2096151292492918
+Linear interpolation average MSE: 7.459878
+Nearest interpolation average MSE: 1.695672
+
+LSTM Masked MSE on test set: 0.039198
+outputs/traffic_20col/file8/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.058344314666450264
+Linear interpolation average MSE: 3.874002
+Nearest interpolation average MSE: 1.796820
+
+LSTM Masked MSE on test set: 0.039074
+outputs/missEmbedding_test/traffic_20col/file17/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.0716315740453848
+Linear interpolation average MSE: 7.980626
+Nearest interpolation average MSE: 1.552687
+
+LSTM Masked MSE on test set: 0.038416
+outputs/missEmbedding_test/traffic_20col/file18/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.09357289238324284
+Linear interpolation average MSE: 7.860332
+Nearest interpolation average MSE: 1.417739
+
+LSTM Masked MSE on test set: 0.025853
+outputs/traffic_20col/file9/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.048116716739701366
+Linear interpolation average MSE: 3.437319
+Nearest interpolation average MSE: 1.458129
+
+LSTM Masked MSE on test set: 0.059430
+outputs/traffic_20col/file10/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.24652156859852062
+Linear interpolation average MSE: 13.079980
+Nearest interpolation average MSE: 1.968464
+
+LSTM Masked MSE on test set: 0.027368
+outputs/missEmbedding_test/traffic_20col/file19/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.03949824529208963
+Linear interpolation average MSE: 2.379849
+Nearest interpolation average MSE: 1.320310
+
+LSTM Masked MSE on test set: 0.050208
+outputs/traffic_20col/file11/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.16392600564113158
+Linear interpolation average MSE: 31.026823
+Nearest interpolation average MSE: 1.827958
+
+LSTM Masked MSE on test set: 0.031430
+outputs/missEmbedding_test/traffic_20col/file20/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.1132915704551267
+Linear interpolation average MSE: 12.181298
+Nearest interpolation average MSE: 1.847765
+
+LSTM Masked MSE on test set: 0.038141
+outputs/traffic_20col/file12/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.09201710874793437
+Linear interpolation average MSE: 6.288437
+Nearest interpolation average MSE: 1.798023
+
+LSTM Masked MSE on test set: 0.047300
+outputs/traffic_20col/file13/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.20705723941119766
+Linear interpolation average MSE: 12.270107
+Nearest interpolation average MSE: 1.571559
+
+LSTM Masked MSE on test set: 0.039090
+outputs/traffic_20col/file14/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.08709007889961048
+Linear interpolation average MSE: 3.898593
+Nearest interpolation average MSE: 1.544488
+
+LSTM Masked MSE on test set: 0.037153
+outputs/traffic_20col/file15/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.1031350668624095
+Linear interpolation average MSE: 3.067881
+Nearest interpolation average MSE: 1.373215
+
+LSTM Masked MSE on test set: 0.045749
+outputs/traffic_20col/file16/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.1818354456838212
+Linear interpolation average MSE: 7.459878
+Nearest interpolation average MSE: 1.695672
+
+LSTM Masked MSE on test set: 0.034992
+outputs/traffic_20col/file17/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.05846447534894358
+Linear interpolation average MSE: 7.980626
+Nearest interpolation average MSE: 1.552687
+
+LSTM Masked MSE on test set: 0.043439
+outputs/traffic_20col/file18/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.10131362564427919
+Linear interpolation average MSE: 7.860332
+Nearest interpolation average MSE: 1.417739
+
+LSTM Masked MSE on test set: 0.025561
+outputs/traffic_20col/file19/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.040269912561231115
+Linear interpolation average MSE: 2.379849
+Nearest interpolation average MSE: 1.320310
+
+LSTM Masked MSE on test set: 0.038479
+outputs/multiscale/traffic_20col/file6/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.04906762026749882
+Linear interpolation average MSE: 6.112525
+Nearest interpolation average MSE: 1.486274
+
+LSTM Masked MSE on test set: 0.040264
+outputs/traffic_20col/file20/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.09439729925293122
+Linear interpolation average MSE: 12.181298
+Nearest interpolation average MSE: 1.847765
+
+LSTM Masked MSE on test set: 0.039959
+outputs/multiscale/traffic_20col/file7/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.053404497597477965
+Linear interpolation average MSE: 3.680933
+Nearest interpolation average MSE: 1.518548
+
+LSTM Masked MSE on test set: 0.043024
+outputs/multiscale/traffic_20col/file1/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.05627551296427447
+Linear interpolation average MSE: 9.155655
+Nearest interpolation average MSE: 1.656436
+
+LSTM Masked MSE on test set: 0.050118
+outputs/multiscale/traffic_20col/file11/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.09415036142341439
+Linear interpolation average MSE: 31.026823
+Nearest interpolation average MSE: 1.827958
+
+LSTM Masked MSE on test set: 0.039319
+outputs/multiscale/traffic_20col/file8/s512_t128_o0_lm15_mr0.2_nh1_lr0.75_dr0.1/
+Masked MSE on test set:0.043628525246153994
+Linear interpolation average MSE: 3.874002
+Nearest interpolation average MSE: 1.796820
+
