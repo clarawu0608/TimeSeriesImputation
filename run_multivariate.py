@@ -11,9 +11,13 @@ import os
 
 # Argument parsing
 parser = argparse.ArgumentParser()
+parser.add_argument("--data_path", required=True, type=str)
+parser.add_argument("--output_path", required=True, type=str)
+parser.add_argument("--num_layers", type=int, default=4)
+parser.add_argument("--nhead", type=int, default=8)
+parser.add_argument("--dropout", type=float, default=0.1)  
 parser.add_argument("--batch_size", type=int, default=16)
 parser.add_argument("--seq_len", type=int, default=64)
-parser.add_argument("--epoch_num", type=int, default=200)
 parser.add_argument("--missing_type", type=int, default=1)
 parser.add_argument("--lm", type=int, default=10)
 parser.add_argument("--missing_rate", type=float, default=0.25)
@@ -27,13 +31,14 @@ args = parser.parse_args()
 # Device setup
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
+epoch_num = 250
 
 # Output path
-output_path = f"outputs/multivariate/test4_{args.seq_len}_{args.token_t_size}_{args.token_t_overlap}_{args.token_d_size}_{args.token_d_overlap}_{args.missing_type}_{args.lm}_{args.missing_rate}_{args.loss_r}/"
+output_path = args.output_path
 os.makedirs(output_path, exist_ok=True)
 
 # Read data
-df = pd.read_csv("dataset/traffic_smaller3.csv", parse_dates=["date"])
+df = pd.read_csv(args.data_path, parse_dates=["date"])
 df = df.sort_values("date")
 data = df.iloc[:, 1:].values.astype(np.float32)  # multivariate data
 timestamps = df["date"].values
@@ -87,10 +92,10 @@ class MaskedWeightedMSELoss(nn.Module):
         mask = mask.float()
         
         # Masked positions (0 in mask)
-        masked_loss = mse_loss * (1 - mask) * r
+        masked_loss = mse_loss * (1 - mask) * r * 2
         
         # Unmasked positions (1 in mask)
-        unmasked_loss = mse_loss * mask * (1 - r)
+        unmasked_loss = mse_loss * mask * (1 - r) * 2
         
         total_loss = masked_loss + unmasked_loss
         
@@ -158,16 +163,16 @@ class PositionalEncoding(nn.Module):
         return x + self.pe[:, :x.size(1)].to(x.device)
 
 class CustomTransformerEncoderLayer(nn.Module):
-    def __init__(self, d_model, nhead):
+    def __init__(self, d_model, nhead=args.nhead):
         super().__init__()
         self.self_attn = nn.MultiheadAttention(d_model, nhead, batch_first=True)
         self.linear1 = nn.Linear(d_model, d_model)
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(args.dropout)
         self.linear2 = nn.Linear(d_model, d_model)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
-        self.dropout1 = nn.Dropout(0.1)
-        self.dropout2 = nn.Dropout(0.1)
+        self.dropout1 = nn.Dropout(args.dropout)
+        self.dropout2 = nn.Dropout(args.dropout)
         self.attn_weights = None
 
     def forward(self, src):
@@ -178,7 +183,7 @@ class CustomTransformerEncoderLayer(nn.Module):
         return self.norm2(src + self.dropout2(src2))
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, d_model=64, nhead=8, num_layers=4):
+    def __init__(self, d_model=64, nhead=args.nhead, num_layers=args.num_layers):
         super().__init__()
         # Patch2DEmbedding input: (B, T, D)
         # Output: (B, N_patches, d_model)
@@ -252,7 +257,7 @@ class TimeOnlyEmbedding(nn.Module):
         return temporal_tokens  # shape: (B, N_t * D, d_model)
 
 class BaselineTransformerEncoder(nn.Module):
-    def __init__(self, d_model=64, nhead=8, num_layers=4, token_t_size=args.token_t_size, token_t_overlap=args.token_t_overlap):
+    def __init__(self, d_model=64, nhead=args.nhead, num_layers=args.num_layers, token_t_size=args.token_t_size, token_t_overlap=args.token_t_overlap):
         super().__init__()
         self.embed = TimeOnlyEmbedding(
             token_t_size = token_t_size,
@@ -265,7 +270,7 @@ class BaselineTransformerEncoder(nn.Module):
             for _ in range(num_layers)
         ])
         self.project = nn.Linear(d_model, token_t_size)
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout = nn.Dropout(p=args.dropout)
 
 
     def forward(self, x, mask):
@@ -325,7 +330,7 @@ class Patch1DEmbedding(nn.Module):
         return torch.cat([temporal_tokens, feature_tokens], dim=1)  # (B, N_t * D + T, d_model)
 
 class MixedTokenTransformer(nn.Module):
-    def __init__(self, d_model=64, nhead=8, num_layers=4,
+    def __init__(self, d_model=64, nhead=args.nhead, num_layers=args.num_layers,
                  token_t_size = args.token_t_size, token_t_overlap = args.token_t_overlap,
                  T = args.seq_len, D = 100):
         super().__init__()
@@ -336,7 +341,7 @@ class MixedTokenTransformer(nn.Module):
         self.feature_len = T
         self.project_t = nn.Linear(d_model, token_t_size)
         self.project_d = nn.Linear(d_model, D)
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout = nn.Dropout(p=args.dropout)
 
     def forward(self, x, mask):
         x = torch.where(mask, x, 0.0)
@@ -392,128 +397,314 @@ def denormalize(x, mean, std):
         return x * std + mean
     else:
         raise ValueError(f"Unsupported x shape: {x.shape}")
+    
 
 
+# Independently imputation
+class IndependentPatchEmbedding(nn.Module):
+    def __init__(self, token_size, d_model):
+        super().__init__()
+        self.linear = nn.Linear(token_size, d_model)
 
-# # Train baseline model
-# baseline_model = BaselineTransformerEncoder(token_t_size=args.seq_len, token_t_overlap=0).to(device)
+    def forward(self, x):
+        return self.linear(x)
+
+
+class IndependentTransformerEncoder(nn.Module):
+    def __init__(self, args=args):
+        super().__init__()
+        self.D = args.token_d_size
+        self.d_model = args.token_t_size
+        self.nhead = args.nhead
+        self.num_layers = args.num_layers
+        self.token_size = args.token_t_size
+        self.token_overlap = args.token_t_overlap
+        self.seq_len = args.seq_len
+        
+        # Modules per variate
+        self.embed_layers = nn.ModuleList([
+            IndependentPatchEmbedding(self.token_size, self.d_model) for _ in range(self.D)
+        ])
+        self.pos_encoders = nn.ModuleList([
+            PositionalEncoding(d_model=self.d_model) for _ in range(self.D)
+        ])
+        self.transformer_layers = nn.ModuleList([
+            nn.ModuleList([
+                CustomTransformerEncoderLayer(self.d_model, self.nhead)
+                for _ in range(self.num_layers)
+            ]) for _ in range(self.D)
+        ])
+        self.reconstructors = nn.ModuleList([
+            nn.Linear(self.d_model * self.num_patches(), self.seq_len) for _ in range(self.D)
+        ])
+        
+        self.mask_token = nn.Parameter(torch.randn(1))
+        self.attn_weights = [None for _ in range(self.D)]
+
+    def num_patches(self):
+        return ((self.seq_len - self.token_size) // (self.token_size - self.token_overlap)) + 1
+
+    def forward(self, x, mask=None):
+        # x: (B, D, L), mask: (B, D, L)
+        B, D, L = x.shape
+        outputs = []
+
+        for d in range(self.D):
+            x_d = x[:, d, :]                   # (B, L)
+            mask_d = mask[:, d, :] if mask is not None else torch.ones_like(x_d, dtype=torch.bool)
+            x_d = torch.where(mask_d, x_d, self.mask_token.expand_as(x_d))
+
+            # Unfold into patches
+            patches = x_d.unfold(1, self.token_size, self.token_size - self.token_overlap)  # (B, num_patches, token_size)
+            embedded = self.embed_layers[d](patches)  # (B, num_patches, d_model)
+            x_d = self.pos_encoders[d](embedded)
+
+            for layer in self.transformer_layers[d]:
+                x_d = layer(x_d)
+                self.attn_weights[d] = layer.attn_weights  # optional
+
+            x_d = x_d.reshape(B, -1)  # (B, num_patches * d_model)
+            out_d = self.reconstructors[d](x_d)  # (B, seq_len)
+            outputs.append(out_d.unsqueeze(1))
+
+        # Combine across variates: (B, D, seq_len)
+        return torch.cat(outputs, dim=1)
+
+# Train independent model
+
+model_ind = IndependentTransformerEncoder().to(device)
 criterion = MaskedWeightedMSELoss()
-# baseline_optimizer = torch.optim.Adam(baseline_model.parameters(), lr=1e-3)
-# baseline_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(baseline_optimizer, T_max=args.epoch_num)
+optimizer_ind = torch.optim.Adam(model_ind.parameters(), lr=1e-3)
+scheduler_ind = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_ind, T_max=epoch_num)
 
-# baseline_output_path = output_path + "baseline/"
-# os.makedirs(baseline_output_path, exist_ok=True)
+ind_output_path = output_path + "ind/"
+os.makedirs(ind_output_path, exist_ok=True)
 
-# best_val_loss_b = float('inf')
-# train_losses_b, val_losses_b = [], []
+# best_val_loss = float('inf')
 # early_stop_counter = 0
+# train_losses, val_losses = [], []
 
-# for epoch in range(args.epoch_num):
-#     baseline_model.train()
+# for epoch in range(epoch_num):
+#     model_ind.train()
 #     train_loss = 0
 #     for gt, masked, mask in train_loader:
-#         gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-#         baseline_optimizer.zero_grad()
-#         out = baseline_model(masked, mask)
-#         recon = reconstruct_from_vertical_patches(temporal_tokens=out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
-#                                                   token_t_size=args.seq_len,
-#                                                   token_t_overlap=0)
-#         loss = criterion(recon, gt, mask, args.loss_r)
+#         gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
+        
+#         # Transpose to (B, D, L)
+#         gt = gt.transpose(1, 2)
+#         masked = masked.transpose(1, 2)
+#         mask = mask.transpose(1, 2)
+
+#         optimizer_ind.zero_grad()
+#         out = model_ind(masked, mask)  # (B, D, L)
+#         loss = criterion(out, gt, mask, args.loss_r)
 #         loss.backward()
-#         baseline_optimizer.step()
+#         optimizer_ind.step()
 #         train_loss += loss.item()
 
-#     baseline_model.eval()
+#     model_ind.eval()
 #     val_loss = 0
 #     with torch.no_grad():
 #         for gt, masked, mask in val_loader:
 #             gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-#             out = baseline_model(masked, mask)
-#             recon = reconstruct_from_vertical_patches(temporal_tokens=out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
-#                                                       token_t_size=args.seq_len,
-#                                                       token_t_overlap=0)
-#             loss = criterion(recon, gt, mask, args.loss_r)
+#             gt = gt.transpose(1, 2)
+#             masked = masked.transpose(1, 2)
+#             mask = mask.transpose(1, 2)
+
+#             out = model_ind(masked, mask)
+#             loss = criterion(out, gt, mask, args.loss_r)
 #             val_loss += loss.item()
 
-#     train_losses_b.append(train_loss / len(train_loader))
-#     val_losses_b.append(val_loss / len(val_loader))
-#     print(f"[Baseline] Epoch {epoch}, Train Loss: {train_losses_b[-1]:.4f}, Val Loss: {val_losses_b[-1]:.4f}")
+#     train_losses.append(train_loss / len(train_loader))
+#     val_losses.append(val_loss / len(val_loader))
+#     print(f"[Ind] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
 
-#     baseline_scheduler.step()
+#     scheduler_ind.step()
 
-#     if val_losses_b[-1] < best_val_loss_b:
-#         best_val_loss_b = val_losses_b[-1]
+#     if val_losses[-1] < best_val_loss:
+#         best_val_loss = val_losses[-1]
 #         early_stop_counter = 0
-#         torch.save(baseline_model.state_dict(), f"{baseline_output_path}/best_model.pth")
+#         torch.save(model_ind.state_dict(), ind_output_path + "best_model.pth")
+#         last_attn_weights = model_ind.attn_weights
 #     else:
 #         early_stop_counter += 1
 #         if early_stop_counter >= 5:
-#             print("[Baseline] Early stopping")
+#             print("[Ind] Early stopping")
 #             break
 
-# plt.figure()
-# plt.plot(train_losses_b, label="Train")
-# plt.plot(val_losses_b, label="Val")
-# plt.legend()
-# plt.title("Baseline Loss Curve")
-# plt.savefig(f"{baseline_output_path}/loss_curve.png")
+# Test independent model
+
+model_ind.load_state_dict(torch.load(ind_output_path + "best_model.pth"))
+model_ind.eval()
+mse_total, count = 0, 0
+
+for i, (gt, masked, mask) in enumerate(test_loader):
+    gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
+    gt = gt.transpose(1, 2)
+    masked = masked.transpose(1, 2)
+    mask = mask.transpose(1, 2)
+
+    with torch.no_grad():
+        out = model_ind(masked, mask)  # (B, D, L)
+
+    gt_np = gt[0].cpu().numpy()       # (D, L)
+    out_np = out[0].cpu().numpy()
+    mask_np = mask[0].cpu().numpy()
+
+    # gt_np = gt_np.transpose(0, 1)
+    # out_np = out_np.transpose(0, 1)
+    # mask_np = mask_np.transpose(0, 1)
+
+    # gt_denorm = denormalize(gt_np, data_std, data_mean)
+    # out_denorm = denormalize(out_np, data_std, data_mean)
+
+    if args.missing_rate != 0:
+        mse_total += ((out_np[~mask_np] - gt_np[~mask_np]) ** 2).sum()
+        count += (~mask_np).sum()
+    else:
+        mse_total += ((out_np - gt_np) ** 2).sum()
+        count += mask_np.sum()
+
+    # if i < 2:
+    #     for d in range(gt_np.shape[0]):
+    #         plt.figure()
+    #         plt.plot(gt_denorm[d], label="GT")
+    #         plt.plot(out_denorm[d], label="Output")
+    #         plt.plot(mask_np[d] * max(gt_denorm[d]), label="Mask")
+    #         plt.legend()
+    #         plt.title(f"Test Case {i}, Variate {d}")
+    #         plt.savefig(f"{ind_output_path}test_case_{i}_variate_{d}.png")
+
+print("[Ind] Masked MSE on test set:", mse_total / count)
+print("[Ind] Working directory:", os.getcwd())
+with open("test_results.txt", "a") as log_file:
+    log_file.write(output_path + "\n")
+    log_file.write("[Ind] Masked MSE on test set:" + str(mse_total / count) + "\n")
 
 
 
-# # Load best baseline model
-# baseline_model.load_state_dict(torch.load(f"{baseline_output_path}/best_model.pth"))
-# baseline_model.eval()
 
-# mse_total_b, count_b = 0.0, 0
-# for i, (gt, masked, mask) in enumerate(test_loader):
-#     gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-#     with torch.no_grad():
-#         out = baseline_model(masked, mask)
-#         out = reconstruct_from_vertical_patches(
-#             temporal_tokens=out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
-#             token_t_size=args.seq_len,
-#             token_t_overlap=0
-#         )
+# Train baseline model
+baseline_model = BaselineTransformerEncoder(token_t_size=args.seq_len, token_t_overlap=0).to(device)
+criterion = MaskedWeightedMSELoss()
+baseline_optimizer = torch.optim.Adam(baseline_model.parameters(), lr=1e-3)
+baseline_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(baseline_optimizer, T_max=epoch_num)
 
-#     gt_np = gt.cpu().numpy().squeeze()
-#     out_np = out.cpu().numpy().squeeze()
-#     mask_np = mask.cpu().numpy().squeeze()
+baseline_output_path = output_path + "baseline/"
+os.makedirs(baseline_output_path, exist_ok=True)
 
-#     if gt_np.ndim == 1: gt_np = gt_np[np.newaxis, :]
-#     if out_np.ndim == 1: out_np = out_np[np.newaxis, :]
-#     if mask_np.ndim == 1: mask_np = mask_np[np.newaxis, :]
+best_val_loss_b = float('inf')
+train_losses_b, val_losses_b = [], []
+early_stop_counter = 0
 
-#     gt_denorm = denormalize(gt_np, data_mean, data_std)
-#     out_denorm = denormalize(out_np, data_mean, data_std)
+for epoch in range(epoch_num):
+    baseline_model.train()
+    train_loss = 0
+    for gt, masked, mask in train_loader:
+        gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+        baseline_optimizer.zero_grad()
+        out = baseline_model(masked, mask)
+        recon = reconstruct_from_vertical_patches(temporal_tokens=out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
+                                                  token_t_size=args.seq_len,
+                                                  token_t_overlap=0)
+        # recon = out
+        loss = criterion(recon, gt, mask, args.loss_r)
+        loss.backward()
+        baseline_optimizer.step()
+        train_loss += loss.item()
 
-#     mse = ((gt_np[~mask_np] - out_np[~mask_np])**2).sum()
-#     mse_total_b += mse
-#     count_b += (~mask_np).sum()
+    baseline_model.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for gt, masked, mask in val_loader:
+            gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+            out = baseline_model(masked, mask)
+            recon = reconstruct_from_vertical_patches(temporal_tokens=out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
+                                                      token_t_size=args.seq_len,
+                                                      token_t_overlap=0)
+            # recon = out
+            loss = criterion(recon, gt, mask, args.loss_r)
+            val_loss += loss.item()
 
-#     if i < 2:
-#         plt.figure()
-#         plt.plot(gt_denorm[:, 0], label="GT")
-#         plt.plot(out_denorm[:, 0], label="Output")
-#         plt.plot(mask_np[:, 0] * np.max(gt_denorm[:, 0]), label="Mask")
-#         plt.legend()
-#         plt.title(f"Baseline Test Case {i}")
-#         plt.savefig(f"{baseline_output_path}/test_case_{i}.png")
+    train_losses_b.append(train_loss / len(train_loader))
+    val_losses_b.append(val_loss / len(val_loader))
+    print(f"[Baseline] Epoch {epoch}, Train Loss: {train_losses_b[-1]:.4f}, Val Loss: {val_losses_b[-1]:.4f}")
 
-# print("[Baseline] Masked MSE on test set:", mse_total_b / count_b)
-# with open("test_results.txt", "a") as log_file:
-#     print("Writing to file...")
-#     log_file.write(output_path + "\n")
-#     log_file.write("[Baseline] Masked MSE on test set:" + str(mse_total_b / count_b) + "\n")
+    baseline_scheduler.step()
 
-# # Plot attention map
-# for i in range(len(baseline_model.layers)):
-#     if hasattr(baseline_model.layers[i], 'attn_weights') and baseline_model.layers[i].attn_weights is not None:
-#         attn_map = baseline_model.layers[-1].attn_weights[0].cpu().numpy()
-#         plt.figure(figsize=(6, 5))
-#         plt.imshow(attn_map, cmap='viridis')
-#         plt.colorbar()
-#         plt.title("Attention Map Layer {}".format(i))
-#         plt.savefig(f"{baseline_output_path}/attention_map_layer{i}.png")
+    if val_losses_b[-1] < best_val_loss_b:
+        best_val_loss_b = val_losses_b[-1]
+        early_stop_counter = 0
+        torch.save(baseline_model.state_dict(), f"{baseline_output_path}/best_model.pth")
+    else:
+        early_stop_counter += 1
+        if early_stop_counter >= 5:
+            print("[Baseline] Early stopping")
+            break
+
+plt.figure()
+plt.plot(train_losses_b, label="Train")
+plt.plot(val_losses_b, label="Val")
+plt.legend()
+plt.title("Baseline Loss Curve")
+plt.savefig(f"{baseline_output_path}/loss_curve.png")
+
+
+
+# Load best baseline model
+baseline_model.load_state_dict(torch.load(f"{baseline_output_path}/best_model.pth"))
+baseline_model.eval()
+
+mse_total_b, count_b = 0.0, 0
+for i, (gt, masked, mask) in enumerate(test_loader):
+    gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+    with torch.no_grad():
+        out = baseline_model(masked, mask)
+        out = reconstruct_from_vertical_patches(
+            temporal_tokens=out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
+            token_t_size=args.seq_len,
+            token_t_overlap=0
+        )
+
+    gt_np = gt.cpu().numpy().squeeze()
+    out_np = out.cpu().numpy().squeeze()
+    mask_np = mask.cpu().numpy().squeeze()
+
+    if gt_np.ndim == 1: gt_np = gt_np[np.newaxis, :]
+    if out_np.ndim == 1: out_np = out_np[np.newaxis, :]
+    if mask_np.ndim == 1: mask_np = mask_np[np.newaxis, :]
+
+    gt_denorm = denormalize(gt_np, data_mean, data_std)
+    out_denorm = denormalize(out_np, data_mean, data_std)
+
+    mse = ((gt_np[~mask_np] - out_np[~mask_np])**2).sum()
+    mse_total_b += mse
+    count_b += (~mask_np).sum()
+
+    if i < 2:
+        plt.figure()
+        plt.plot(gt_denorm[:, 0], label="GT")
+        plt.plot(out_denorm[:, 0], label="Output")
+        plt.plot(mask_np[:, 0] * np.max(gt_denorm[:, 0]), label="Mask")
+        plt.legend()
+        plt.title(f"Baseline Test Case {i}")
+        plt.savefig(f"{baseline_output_path}/test_case_{i}.png")
+
+print("[Baseline] Masked MSE on test set:", mse_total_b / count_b)
+with open("test_results.txt", "a") as log_file:
+    print("Writing to file...")
+    log_file.write(output_path + "\n")
+    log_file.write("[Baseline] Masked MSE on test set:" + str(mse_total_b / count_b) + "\n")
+
+# Plot attention map
+for i in range(len(baseline_model.layers)):
+    if hasattr(baseline_model.layers[i], 'attn_weights') and baseline_model.layers[i].attn_weights is not None:
+        attn_map = baseline_model.layers[-1].attn_weights[0].cpu().numpy()
+        plt.figure(figsize=(6, 5))
+        plt.imshow(attn_map, cmap='viridis')
+        plt.colorbar()
+        plt.title("Attention Map Layer {}".format(i))
+        plt.savefig(f"{baseline_output_path}/attention_map_layer{i}.png")
 
 
 
@@ -522,7 +713,7 @@ criterion = MaskedWeightedMSELoss()
 # # Train multi-token model
 # multi_model = BaselineTransformerEncoder().to(device)
 # multi_optimizer = torch.optim.Adam(multi_model.parameters(), lr=1e-3)
-# multi_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(multi_optimizer, T_max=args.epoch_num)
+# multi_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(multi_optimizer, T_max=epoch_num)
 
 # multi_output_path = output_path + "multi/"
 # os.makedirs(multi_output_path, exist_ok=True)
@@ -531,7 +722,7 @@ criterion = MaskedWeightedMSELoss()
 # train_losses_multi, val_losses_multi = [], []
 # early_stop_counter = 0
 
-# for epoch in range(args.epoch_num):
+# for epoch in range(epoch_num):
 #     multi_model.train()
 #     train_loss = 0
 #     for gt, masked, mask in train_loader:
@@ -583,7 +774,7 @@ criterion = MaskedWeightedMSELoss()
 
 
 
-# # Load best baseline model
+# # Load best multi model
 # multi_model.load_state_dict(torch.load(f"{multi_output_path}/best_model.pth"))
 # multi_model.eval()
 
@@ -644,7 +835,7 @@ criterion = MaskedWeightedMSELoss()
 # 2D Model initialization
 model = TransformerEncoder().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epoch_num)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epoch_num)
 
 twoD_output_path = output_path + "2D/"
 os.makedirs(twoD_output_path, exist_ok=True)
@@ -654,7 +845,7 @@ best_val_loss = float('inf')
 early_stop_counter = 0
 train_losses, val_losses = [], []
 
-for epoch in range(args.epoch_num):
+for epoch in range(epoch_num):
     model.train()
     train_loss = 0
     for gt, masked, mask in train_loader:
@@ -783,7 +974,7 @@ for i in range(len(model.layers)):
 # # Training the 1D mixture model
 # mix_model = MixedTokenTransformer(D=D).to(device)
 # mix_optimizer = torch.optim.Adam(mix_model.parameters(), lr=1e-3)
-# mix_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(mix_optimizer, T_max=args.epoch_num)
+# mix_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(mix_optimizer, T_max=epoch_num)
 
 # mix_output_path = output_path + "mix/"
 # os.makedirs(mix_output_path, exist_ok=True)
@@ -792,7 +983,7 @@ for i in range(len(model.layers)):
 # train_losses_b, val_losses_b = [], []
 # early_stop_counter = 0
 
-# for epoch in range(args.epoch_num):
+# for epoch in range(epoch_num):
 #     mix_model.train()
 #     train_loss = 0
 #     for gt, masked, mask in train_loader:

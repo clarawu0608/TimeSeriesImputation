@@ -11,14 +11,19 @@ import os
 
 # Argument parsing
 parser = argparse.ArgumentParser()
+parser.add_argument("--data_path", required=True, type=str)
+parser.add_argument("--output_path", required=True, type=str)
+parser.add_argument("--num_layers", type=int, default=4)
+parser.add_argument("--nhead", type=int, default=1)
+parser.add_argument("--dropout_rate", type=float, default=0.1)
 parser.add_argument("--batch_size", type=int, default=16)
 parser.add_argument("--seq_len", type=int, default=64)
 parser.add_argument("--token_size", type=int, default=8)
 parser.add_argument("--token_overlap", type=int, default=0)
-parser.add_argument("--epoch_num", type=int, default=100)
 parser.add_argument("--missing_type", type=int, default=1)
-parser.add_argument("--lm", type=int, default=10)
-parser.add_argument("--missing_rate", type=float, default=0.25)
+parser.add_argument("--lm", type=int, default=15)
+parser.add_argument("--missing_rate", type=float, default=0.3)
+parser.add_argument("--loss_r", type=float, default=0.8)
 args = parser.parse_args()
 
 # Device setup
@@ -26,12 +31,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
 
 # Output path
-output_path = "outputs/normal/high_freq/3000_{}_{}_{}_{}_{}_{}/".format(
-    args.seq_len, args.token_size, args.token_overlap, args.missing_type, args.lm, args.missing_rate)
+output_path = args.output_path 
 os.makedirs(output_path, exist_ok=True)
 
 # Read data
-df = pd.read_csv("dataset/cosine_wave_3000.csv", parse_dates=["date"])
+df = pd.read_csv(args.data_path, parse_dates=["date"])
 data = df.iloc[:, 1].values.astype(np.float32)
 
 # Normalize data
@@ -62,6 +66,9 @@ def generate_mask_matrix_from_paper(length, lm=5, r=0.15, seed=None):
     if seed is not None:
         np.random.seed(seed)
 
+    if r == 0:
+        return np.ones(length, dtype=bool)
+
     mask = np.ones(length, dtype=bool)
 
     lu = int((1 - r) / r * lm)  # mean unmasked length
@@ -81,6 +88,29 @@ def generate_mask_matrix_from_paper(length, lm=5, r=0.15, seed=None):
         i += unmasked_len
 
     return mask
+
+# criterion
+class MaskedWeightedMSELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss(reduction='none')  # element-wise loss
+
+    def forward(self, out, gt, mask, r):
+        mse_loss = self.mse(out, gt)  # shape: [batch, seq_len, ...]
+        
+        # Convert mask to float for computation
+        mask = mask.float()
+        
+        # Masked positions (0 in mask)
+        masked_loss = mse_loss * (1 - mask) * r * 2
+        
+        # Unmasked positions (1 in mask)
+        unmasked_loss = mse_loss * mask * (1 - r) * 2
+        
+        total_loss = masked_loss + unmasked_loss
+        
+        # Final scalar loss (mean over all elements)
+        return total_loss.mean()
 
 if args.missing_type == 0:
     mask_matrix = generate_mask_matrix(len(data), args.missing_rate)
@@ -122,16 +152,12 @@ test_loader = DataLoader(test_set, batch_size=args.batch_size)
 
 # Transformer model with attention map capture
 class PatchEmbedding(nn.Module):
-    def __init__(self, token_size):
+    def __init__(self, token_size, d_model):
         super().__init__()
-        self.token_size = token_size
-        self.linear = nn.Linear(token_size, token_size)
+        self.linear = nn.Linear(token_size, d_model)
 
     def forward(self, x):
-        B, L = x.shape
-        patches = x.unfold(1, self.token_size, self.token_size - args.token_overlap)
-        patches = self.linear(patches)
-        return patches
+        return self.linear(x)
     
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len=30000):
@@ -147,18 +173,19 @@ class PositionalEncoding(nn.Module):
         if x.size(1) > self.pe.size(1):
             raise ValueError(f"PositionalEncoding max_len={self.pe.size(1)} is too small for input sequence length {x.size(1)}.")
         return x + self.pe[:, :x.size(1)].to(x.device)
+    
 
 class CustomTransformerEncoderLayer(nn.Module):
     def __init__(self, d_model, nhead):
         super().__init__()
         self.self_attn = nn.MultiheadAttention(d_model, nhead, batch_first=True)
         self.linear1 = nn.Linear(d_model, d_model)
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(args.dropout_rate)
         self.linear2 = nn.Linear(d_model, d_model)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
-        self.dropout1 = nn.Dropout(0.1)
-        self.dropout2 = nn.Dropout(0.1)
+        self.dropout1 = nn.Dropout(args.dropout_rate)
+        self.dropout2 = nn.Dropout(args.dropout_rate)
         self.attn_weights = None
 
     def forward(self, src, src_mask=None, src_key_padding_mask=None):
@@ -172,54 +199,72 @@ class CustomTransformerEncoderLayer(nn.Module):
         src = src + self.dropout2(src2)
         src = self.norm2(src)
         return src
+    
+def reconstruct_from_vertical_patches(temporal_tokens, B, T, token_t_size, token_t_overlap):
+    # temporal_tokens: (B, N_t * D, token_t_size)
+    
+    recon = torch.zeros((B, T), device=device)
+    count = torch.zeros((B, T), device=device)
+
+    t_starts = list(range(0, T - token_t_size + 1, token_t_size - token_t_overlap))
+
+    for i, t_start in enumerate(t_starts):
+        patch = temporal_tokens[:,i, :].reshape(B, token_t_size, 1).squeeze(-1)  # (B, token_t_size)
+        recon[:, t_start:t_start+token_t_size] += patch
+        count[:, t_start:t_start+token_t_size] += 1
+
+    return recon / count.clamp(min=1e-6) # (B, T, D)
+
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, d_model=64, nhead=8, num_layers=8):
+    def __init__(self, d_model=args.token_size, nhead=args.nhead, num_layers=args.num_layers):
         super().__init__()
-        self.embed = PatchEmbedding(args.token_size)
-        self.pos_encoder = PositionalEncoding(d_model=args.token_size)
-        self.layers = nn.ModuleList([CustomTransformerEncoderLayer(args.token_size, nhead) for _ in range(num_layers)])
+        self.embed = PatchEmbedding(args.token_size, d_model)
+        self.pos_encoder = PositionalEncoding(d_model=d_model)
+        self.layers = nn.ModuleList([CustomTransformerEncoderLayer(d_model, nhead) for _ in range(num_layers)])
         self.project = nn.Linear(args.token_size, args.token_size)
         self.attn_weights = None
         self.mask_token = nn.Parameter(torch.randn(1))
+        num_patches = ((args.seq_len - args.token_size) // (args.token_size - args.token_overlap)) + 1
+        self.reconstructor = nn.Linear(d_model * num_patches, args.seq_len)
 
     def forward(self, x, mask=None):
         x = torch.where(mask, x, self.mask_token.expand_as(x))
         B, L = x.shape
-        patches = x.unfold(1, args.token_size, args.token_size - args.token_overlap)
-        patches = self.embed.linear(patches)
+        patches = x.unfold(1, args.token_size, args.token_size - args.token_overlap) # (B, num_patches, token_size)
+        patches = self.embed(patches) # (B, num_patches, d_model)
         x = self.pos_encoder(patches)
 
+        # Transformer layers
         for layer in self.layers:
             x = layer(x)
-            self.attn_weights = layer.attn_weights
+            self.attn_weights = layer.attn_weights # (B, num_patches, d_model)
 
-        out = self.project(x).reshape(B, -1)
-        if out.shape[1] > L:
-            out = out[:, :L]
-        elif out.shape[1] < L:
-            pad = torch.zeros((B, L - out.shape[1]), device=out.device)
-            out = torch.cat([out, pad], dim=1)
+        x = x.reshape(B, -1) # (B, num_patches * d_model)
+        out = self.reconstructor(x) # (B, seq_len)
+        # out = reconstruct_from_vertical_patches(x, B, args.seq_len, args.token_size, args.token_overlap) # (B, seq_len)
+        
         return out
 
 model = TransformerEncoder().to(device)
-criterion = nn.MSELoss()
+criterion = MaskedWeightedMSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epoch_num)
+epoch_num = 250
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epoch_num)
 
 best_val_loss = float('inf')
 early_stop_counter = 0
 train_losses, val_losses = [], []
 
 # Training
-for epoch in range(args.epoch_num):
+for epoch in range(epoch_num):
     model.train()
     train_loss = 0
     for gt, masked, mask in train_loader:
         gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
         optimizer.zero_grad()
         out = model(masked, mask)
-        loss = criterion(out, gt)
+        loss = criterion(out, gt, mask, args.loss_r)
         loss.backward()
         optimizer.step(), mask
         train_loss += loss.item()
@@ -230,7 +275,7 @@ for epoch in range(args.epoch_num):
         for gt, masked, mask in val_loader:
             gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
             out = model(masked, mask)
-            loss = criterion(out, gt)
+            loss = criterion(out, gt, mask, args.loss_r)
             val_loss += loss.item()
 
     train_losses.append(train_loss / len(train_loader))
@@ -242,7 +287,7 @@ for epoch in range(args.epoch_num):
     if val_losses[-1] < best_val_loss:
         best_val_loss = val_losses[-1]
         early_stop_counter = 0
-        torch.save(model.state_dict(), "best_model.pth")
+        torch.save(model.state_dict(), args.output_path + "best_model.pth")
         last_attn_weights = model.attn_weights
     else:
         early_stop_counter += 1
@@ -267,9 +312,74 @@ for i in range(len(model.layers)):
         plt.imshow(attn_map, cmap='viridis')
         plt.colorbar()
         plt.title("Attention Map Layer {}".format(i))
-        plt.savefig(f"{output_path}/attention_map_layer{i}.png")
+        plt.savefig(f"{output_path}attention_map_layer{i}.png")
 
 # Test and baseline comparison
+
+class RNNImputer(nn.Module):
+    def __init__(self, input_dim=1, hidden_dim=64, num_layers=2):
+        super().__init__()
+        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
+        self.output = nn.Linear(hidden_dim, input_dim)
+
+    def forward(self, x):
+        x = x.unsqueeze(-1)  # [B, L] -> [B, L, 1]
+        out, _ = self.lstm(x)
+        out = self.output(out)
+        return out.squeeze(-1)  # [B, L, 1] -> [B, L]
+
+# -------------------------
+# RNN Imputer Training
+# -------------------------
+print("\nTraining LSTM Imputer...")
+rnn_model = RNNImputer().to(device)
+rnn_criterion = nn.MSELoss()
+rnn_optimizer = torch.optim.Adam(rnn_model.parameters(), lr=1e-3)
+rnn_epoch_num = 100
+rnn_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(rnn_optimizer, T_max=rnn_epoch_num)
+
+best_rnn_val_loss = float('inf')
+early_stop_counter = 0
+
+for epoch in range(rnn_epoch_num):
+    rnn_model.train()
+    train_loss = 0
+    for gt, masked, mask in train_loader:
+        gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+        rnn_optimizer.zero_grad()
+        out = rnn_model(masked)
+        loss = rnn_criterion(out, gt)
+        loss.backward()
+        rnn_optimizer.step()
+        train_loss += loss.item()
+
+    rnn_model.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for gt, masked, mask in val_loader:
+            gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+            out = rnn_model(masked)
+            loss = rnn_criterion(out, gt)
+            val_loss += loss.item()
+
+    avg_train_loss = train_loss / len(train_loader)
+    avg_val_loss = val_loss / len(val_loader)
+    print(f"[LSTM Epoch {epoch}] Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+    rnn_scheduler.step()
+
+    if avg_val_loss < best_rnn_val_loss:
+        best_rnn_val_loss = avg_val_loss
+        early_stop_counter = 0
+        torch.save(rnn_model.state_dict(), args.output_path + "best_rnn_model.pth")
+    else:
+        early_stop_counter += 1
+        if early_stop_counter >= 5:
+            print("Early stopping for LSTM")
+            break
+
+# -------------------------
+# RNN Imputer Evaluation
+# -------------------------
 
 # For denormalization
 def denormalize(x, data_std, data_mean):
@@ -279,8 +389,50 @@ def denormalize(x, data_std, data_mean):
 def reconstruct(pred_patches, count_map):
     return np.divide(pred_patches, count_map, out=np.zeros_like(pred_patches), where=count_map != 0)
 
+print("\nEvaluating LSTM Imputer on test set...")
+rnn_model.load_state_dict(torch.load(args.output_path + "best_rnn_model.pth"))
+rnn_model.eval()
+mse_total_rnn, count_rnn = 0, 0
 
-model.load_state_dict(torch.load("best_model.pth"))
+for i, (gt, masked, mask) in enumerate(test_loader):
+    gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+    with torch.no_grad():
+        out = rnn_model(masked)
+
+    gt_np = gt[0].cpu().numpy()
+    out_np = out[0].cpu().numpy()
+    mask_np = mask[0].cpu().numpy()
+
+    gt_denorm = denormalize(gt_np, data_std, data_mean)
+    out_denorm = denormalize(out_np, data_std, data_mean)
+    
+    if args.missing_rate != 0:
+        mse_total_rnn += ((out_np[~mask_np] - gt_np[~mask_np]) ** 2).sum()
+        count_rnn += (~mask_np).sum()
+    else:
+        mse_total_rnn += ((out_np - gt_np) ** 2).sum()
+        count_rnn += (mask_np).sum()
+
+    if i < 2:
+        plt.figure()
+        plt.plot(gt_denorm, label="GT")
+        plt.plot(out_denorm, label="LSTM Output")
+        plt.plot(mask_np * max(gt_denorm), label="Mask")
+        plt.legend()
+        plt.title(f"LSTM Test Case {i}")
+        plt.savefig(f"{output_path}lstm_test_case_{i}.png")
+
+lstm_mse = mse_total_rnn / count_rnn
+print("LSTM Masked MSE on test set:", lstm_mse)
+
+with open("test_results.txt", "a") as log_file:
+    log_file.write(f"LSTM Masked MSE on test set: {lstm_mse:.6f}\n")
+
+
+
+
+
+model.load_state_dict(torch.load(args.output_path + "best_model.pth"))
 model.eval()
 mse_total, count = 0, 0
 
@@ -299,9 +451,13 @@ for i, (gt, masked, mask) in enumerate(test_loader):
     out_denorm = denormalize(out_np, data_std, data_mean)
 
     # Compute masked MSE
-    mse_total += ((out_denorm[~mask_np] - gt_denorm[~mask_np]) ** 2).sum()
-    count += (~mask_np).sum()
-
+    if args.missing_rate != 0:
+        mse_total += ((out_np[~mask_np] - gt_np[~mask_np]) ** 2).sum()
+        count += (~mask_np).sum()
+    else:
+        mse_total += ((out_np - gt_np) ** 2).sum()
+        count += (mask_np).sum()
+ 
     # Plotting
     if i < 2:
         plt.figure()
@@ -322,7 +478,7 @@ with open("test_results.txt", "a") as log_file:
 # Baseline interpolation across all test samples
 x = np.arange(args.seq_len)
 
-for kind in ["linear", "cubic"]:
+for kind in ["linear", "nearest"]:
     total_mse, valid_count = 0.0, 0
     for i in range(len(test_set)):
         gt, masked, mask = test_set[i]
