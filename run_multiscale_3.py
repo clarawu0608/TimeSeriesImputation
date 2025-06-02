@@ -221,7 +221,7 @@ def reconstruct_from_vertical_patches(temporal_tokens, B, T, token_t_size, token
 class TransformerEncoder(nn.Module):
     def __init__(self, args):
         super().__init__()
-        self.token_sizes = [int(args.seq_len / 16), int(args.seq_len / 8), int(args.seq_len / 4), int(args.seq_len / 2)]
+        self.token_sizes = [24, 96, 168, 336]
         self.nhead = args.nhead
         self.num_layers = args.num_layers
         self.seq_len = args.seq_len
@@ -249,7 +249,6 @@ class TransformerEncoder(nn.Module):
     def forward(self, x, mask=None):
         B, L = x.shape
         x_masked = torch.where(mask, x, self.mask_token.expand_as(x))
-        # x_masked=x
 
         outputs = []
         for i, token_size in enumerate(self.token_sizes):

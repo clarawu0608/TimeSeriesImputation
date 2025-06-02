@@ -26,13 +26,13 @@ for seq_len in "${seq_len[@]}"; do
               for dropout in "${dropout[@]}"; do
               
                 # Define output directory to keep track of experiments
-                output_dir="outputs/multivariate/traffic/s${seq_len}_t${token_size}_o${token_overlap}_lm${lm}_mr${missing_rate}_nh${nhead}_lr${loss_r}_dr${dropout}/"
+                output_dir="outputs/multivariate/traffic/experiments0524/s${seq_len}_t${token_size}_o${token_overlap}_lm${lm}_mr${missing_rate}_nh${nhead}_lr${loss_r}_dr${dropout}/"
 
                 echo "Running: seq_len=$seq_len, token_size=$token_size, token_overlap=$token_overlap, lm=$lm, missing_rate=$missing_rate, nhead=$nhead, loss_r=$loss_r, dropout=$dropout" 
 
                 # Run the experiment
-                python -u run_multivariate.py \
-                  --data_path "dataset/traffic_smaller2.csv" \
+                python -u run_multivariate_hybrid.py \
+                  --data_path "dataset/traffic/traffic_smaller2.csv" \
                   --output_path "$output_dir" \
                   --batch_size 16 \
                   --seq_len "$seq_len" \
