@@ -21,6 +21,8 @@ parser.add_argument("--seq_len", type=int, default=64)
 parser.add_argument("--token_size", type=int, default=8)
 parser.add_argument("--token_overlap", type=int, default=0)
 parser.add_argument("--missing_type", type=int, default=1)
+# 0: random mask, 1: geometric mask, 2: prediction mask
+parser.add_argument("--pred_len", type=int, default=0)
 parser.add_argument("--lm", type=int, default=15)
 parser.add_argument("--missing_rate", type=float, default=0.3)
 parser.add_argument("--loss_r", type=float, default=0.8)
@@ -48,6 +50,59 @@ def generate_mask_matrix(length, missing_rate):
     mask = np.ones(length, dtype=bool)
     missing_indices = np.random.choice(length, int(length * missing_rate), replace=False)
     mask[missing_indices] = False
+    return mask
+
+# prediction mask generation
+def generate_prediction_mask(sequence_len, seq_len, pred_len):
+    """
+    Generate a mask where:
+    - The sequence is divided into chunks of size `seq_len`.
+    - For each full chunk, the last `pred_len` elements are masked.
+    - For the last partial chunk (if any), mask `int(round(chunk_len * (pred_len / seq_len)))` elements.
+    
+    Args:
+        sequence_len: Total length of the mask.
+        seq_len: Length of each full chunk.
+        pred_len: Number of masked elements per full chunk.
+    
+    Returns:
+        Boolean mask (True = unmasked, False = masked).
+    """
+    mask = np.ones(sequence_len, dtype=bool)
+    
+    # Process full chunks
+    for start in range(0, sequence_len, seq_len):
+        end = start + seq_len
+        if end > sequence_len:
+            break  # handle the last partial chunk separately
+        mask[end - pred_len : end] = False
+    
+    # Process the last partial chunk (if any)
+    remaining = sequence_len % seq_len
+    if remaining > 0:
+        last_chunk_start = sequence_len - remaining
+        last_chunk_len = remaining
+        prop_masked = int(round(last_chunk_len * (pred_len / seq_len)))
+        prop_masked = max(0, min(prop_masked, last_chunk_len))  # ensure valid range
+        if prop_masked > 0:
+            mask[last_chunk_start + last_chunk_len - prop_masked : sequence_len] = False
+    
+    return mask
+
+def generate_prediction_mask_fixed(seq_len, pred_len):
+    """
+    Generate a mask for a fixed sequence length where the last `pred_len` elements are masked.
+    
+    Args:
+        seq_len (int): Total length of the sequence.
+        pred_len (int): Number of elements to mask at the end.
+    
+    Returns:
+        np.ndarray: Boolean mask (True = unmasked, False = masked).
+    """
+    mask = np.ones(seq_len, dtype=bool)
+    if pred_len > 0:
+        mask[-pred_len:] = False
     return mask
 
 def generate_mask_matrix_from_paper(length, lm=5, r=0.15, seed=None):
@@ -116,6 +171,8 @@ if args.missing_type == 0:
     mask_matrix = generate_mask_matrix(len(data), args.missing_rate)
 elif args.missing_type == 1:
     mask_matrix = generate_mask_matrix_from_paper(len(data), lm=args.lm, r=args.missing_rate, seed=42)
+elif args.missing_type == 2:
+    mask_matrix = generate_prediction_mask(len(data), args.seq_len, args.pred_len)
 masked_data = data.copy()
 masked_data[~mask_matrix] = 0.0
 
@@ -131,10 +188,15 @@ class TimeSeriesDataset(Dataset):
         return len(self.data) - self.seq_len
 
     def __getitem__(self, idx):
+        if args.missing_type == 2:
+            mask = generate_prediction_mask_fixed(self.seq_len, args.pred_len)
+        else:
+            mask = self.mask[idx:idx+self.seq_len]
+            
         return (
             self.data[idx:idx+self.seq_len],
             self.masked_data[idx:idx+self.seq_len],
-            self.mask[idx:idx+self.seq_len]
+            mask
         )
 
 full_dataset = TimeSeriesDataset(data, masked_data, mask_matrix, args.seq_len)
@@ -339,20 +401,11 @@ plt.legend()
 plt.title("Loss Curve")
 plt.savefig(f"{output_path}loss_curve.png")
 
-# Plot one attention map
-# for i in range(len(model.layers)):
-#     if hasattr(model.layers[i], 'attn_weights') and model.layers[i].attn_weights is not None:
-#         attn_map = model.layers[-1].attn_weights[0].cpu().numpy()
-#         plt.figure(figsize=(6, 5))
-#         plt.imshow(attn_map, cmap='viridis')
-#         plt.colorbar()
-#         plt.title("Attention Map Layer {}".format(i))
-#         plt.savefig(f"{output_path}attention_map_layer{i}.png")
 
 # Test and baseline comparison
 
 class RNNImputer(nn.Module):
-    def __init__(self, input_dim=1, hidden_dim=64, num_layers=2):
+    def __init__(self, input_dim=1, hidden_dim=64, num_layers=args.num_layers):
         super().__init__()
         self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
         self.output = nn.Linear(hidden_dim, input_dim)
