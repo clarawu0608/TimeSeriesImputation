@@ -7038,3 +7038,393 @@ Masked MSE on test set:0.04415986607282786
 Linear interpolation average MSE: 6.698325
 Nearest interpolation average MSE: 1.862702
 
+outputs/multivariate/traffic/hybrid_multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Hybrid] Masked MSE on test set:0.03248566812052649
+outputs/multivariate/traffic/hybrid_multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Hybrid] Masked MSE on test set:0.03248566812052649
+outputs/multivariate/traffic/hybrid_multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Hybrid] Masked MSE on test set:0.03248566812052649
+LSTM Masked MSE on test set: 0.051516
+Linear interpolation average MSE: 5.584056
+Nearest interpolation average MSE: 1.719345
+
+LSTM Masked MSE on test set: 0.032137
+Linear interpolation average MSE: 5.584056
+Nearest interpolation average MSE: 1.719345
+
+LSTM Masked MSE on test set: 0.036285
+Linear interpolation average MSE: 5.584056
+Nearest interpolation average MSE: 1.719345
+
+LSTM Masked MSE on test set: 0.034906
+Linear interpolation average MSE: 5.584056
+Nearest interpolation average MSE: 1.719345
+
+LSTM Masked MSE on test set: 0.058942
+Linear interpolation average MSE: 0.045586
+Nearest interpolation average MSE: 0.042505
+
+LSTM Masked MSE on test set: 0.063178
+Linear interpolation average MSE: 0.045586
+Nearest interpolation average MSE: 0.042505
+
+LSTM Masked MSE on test set: 0.060348
+Linear interpolation average MSE: 0.045586
+Nearest interpolation average MSE: 0.042505
+
+LSTM Masked MSE on test set: 0.061059
+Linear interpolation average MSE: 0.045586
+Nearest interpolation average MSE: 0.042505
+
+LSTM Masked MSE on test set: 0.036953
+Linear interpolation average MSE: 0.572339
+Nearest interpolation average MSE: 0.537930
+
+LSTM Masked MSE on test set: 0.038472
+Linear interpolation average MSE: 0.572339
+Nearest interpolation average MSE: 0.537930
+
+LSTM Masked MSE on test set: 0.038353
+Linear interpolation average MSE: 0.572339
+Nearest interpolation average MSE: 0.537930
+
+LSTM Masked MSE on test set: 0.037092
+Linear interpolation average MSE: 0.572339
+Nearest interpolation average MSE: 0.537930
+
+outputs/multivariate/traffic/hybrid_multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Ind] Masked MSE on test set:0.022802876803139638
+outputs/multivariate/traffic/hybrid_multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Baseline] Masked MSE on test set:0.21467956422009296
+[2D] Masked MSE on test set:0.17457389022022052
+
+
+outputs/multivariate/traffic/multi/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.19336770100643685
+[2D] Masked MSE on test set:0.06445519280952144
+
+
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.02852455808318158
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.028686932044896973
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.028407611831682663
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.026767910688569974
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.0271245037711523
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.0265921164523854
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.0261263907363899
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.025921506797649756
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.025199942291846123
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.025476224687187844
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.024687062242655284
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.02428066971836676
+outputs/multivariate/traffic/multi/multiscale/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.026207691310864627
+outputs/multivariate/traffic/multi/multiscale_residule/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2/
+[Multi] Masked MSE on test set:0.05505567800875349
+outputs/multivariate/traffic/multi/multiscale_fix/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5/
+[Multi] Masked MSE on test set:0.01950481757669997
+outputs/multivariate/traffic/multi/multiscale_fix_explosion/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5/
+[Multi] Masked MSE on test set:0.02135841387791524
+outputs/multivariate/traffic/multi/multiscale_Adam/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5/
+[Multi] Masked MSE on test set:0.019003511094318585
+LSTM Masked MSE on test set: 0.019087
+outputs/prediction_mask/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2/
+Masked MSE on test set:0.0928225040435791
+Linear interpolation average MSE: 3.117795
+Nearest interpolation average MSE: 2.618335
+
+LSTM Masked MSE on test set: 0.111043
+outputs/prediction_mask/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2/
+Masked MSE on test set:0.01876363009214401
+Linear interpolation average MSE: 598.750244
+Nearest interpolation average MSE: 2.733758
+
+LSTM Masked MSE on test set: 0.071640
+outputs/prediction_mask/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl64/
+Masked MSE on test set:0.0751310408115387
+Linear interpolation average MSE: 98.091034
+Nearest interpolation average MSE: 2.771770
+
+LSTM Masked MSE on test set: 0.204270
+outputs/prediction_mask/univariate/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2/
+Masked MSE on test set:0.028704115748405458
+Linear interpolation average MSE: 345.974091
+Nearest interpolation average MSE: 2.526192
+
+LSTM Masked MSE on test set: 0.226115
+outputs/prediction_mask/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl192/
+Masked MSE on test set:0.028709187110265096
+Linear interpolation average MSE: 1697.028076
+Nearest interpolation average MSE: 2.981045
+
+LSTM Masked MSE on test set: 0.051598
+outputs/prediction_mask/univariate/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl64/
+Masked MSE on test set:0.0296947181224823
+Linear interpolation average MSE: 43.662888
+Nearest interpolation average MSE: 2.944856
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl64/
+[Baseline] Masked MSE on test set:0.2591318247126437
+LSTM Masked MSE on test set: 0.257694
+outputs/prediction_mask/univariate/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl192/
+Masked MSE on test set:0.03199142018953959
+Linear interpolation average MSE: 1206.593628
+Nearest interpolation average MSE: 2.644161
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Baseline] Masked MSE on test set:0.2658879534841954
+[2D] Masked MSE on test set:1.0072460488505748
+
+
+[2D] Masked MSE on test set:0.024987756487966955
+
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Baseline] Masked MSE on test set:0.2642092762212644
+[2D] Masked MSE on test set:0.8486984554597701
+
+
+[2D] Masked MSE on test set:0.02657622238685345
+
+
+LSTM Masked MSE on test set: 0.300645
+outputs/prediction_mask/univariate/file3/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2/
+Masked MSE on test set:0.01865473985671997
+Linear interpolation average MSE: 235.791809
+Nearest interpolation average MSE: 2.132514
+
+LSTM Masked MSE on test set: 0.073090
+outputs/prediction_mask/univariate/file3/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl64/
+Masked MSE on test set:0.01640276610851288
+Linear interpolation average MSE: 35.405769
+Nearest interpolation average MSE: 2.123940
+
+[2D] Masked MSE on test set:0.40037155677532327
+
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl64/
+[Baseline] Masked MSE on test set:0.22966758991109915
+[2D] Masked MSE on test set:0.768031805630388
+
+
+[2D] Masked MSE on test set:1.0013088463092672
+
+
+LSTM Masked MSE on test set: 0.041390
+outputs/prediction_mask/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl64/
+Masked MSE on test set:0.11712120771408081
+Linear interpolation average MSE: 698.724426
+Nearest interpolation average MSE: 1.932973
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Baseline] Masked MSE on test set:0.2342639581088362
+[2D] Masked MSE on test set:0.9966180630387931
+
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Baseline] Masked MSE on test set:0.2356340921336207
+[2D] Masked MSE on test set:0.2185540981950431
+
+
+LSTM Masked MSE on test set: 0.015701
+outputs/prediction_mask/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0467125803232193
+Linear interpolation average MSE: 3170.237061
+Nearest interpolation average MSE: 2.014321
+
+LSTM Masked MSE on test set: 0.078656
+outputs/prediction_mask/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl192/
+Masked MSE on test set:0.09956035614013672
+Linear interpolation average MSE: 7598.942871
+Nearest interpolation average MSE: 2.007719
+
+LSTM Masked MSE on test set: 0.002725
+outputs/prediction_mask/univariate/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl64/
+Masked MSE on test set:0.09990161657333374
+Linear interpolation average MSE: 484.487152
+Nearest interpolation average MSE: 1.908302
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl64/
+[Multi] Masked MSE on test set:0.06245809620824353
+LSTM Masked MSE on test set: 0.029315
+outputs/prediction_mask/univariate/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.03548388481140137
+Linear interpolation average MSE: 2109.161865
+Nearest interpolation average MSE: 2.075498
+
+outputs/simulation/multivariate/period/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Baseline] Masked MSE on test set:1.0157611212699529
+outputs/simulation/multivariate/period/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Baseline] Masked MSE on test set:0.08903874484018942
+LSTM Masked MSE on test set: 0.050444
+outputs/prediction_mask/univariate/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl192/
+Masked MSE on test set:0.05674558877944946
+Linear interpolation average MSE: 6298.714844
+Nearest interpolation average MSE: 1.982183
+
+outputs/simulation/multivariate/period/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Multi] Masked MSE on test set:0.004592481799294958
+LSTM Masked MSE on test set: 0.000589
+outputs/prediction_mask/univariate/file3/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl64/
+Masked MSE on test set:0.10146770477294922
+Linear interpolation average MSE: 433.484161
+Nearest interpolation average MSE: 2.054897
+
+LSTM Masked MSE on test set: 0.046666
+outputs/simulation/univariate/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.000503499492454137
+Linear interpolation average MSE: 0.226133
+Nearest interpolation average MSE: 0.307213
+
+LSTM Masked MSE on test set: 0.027375
+outputs/simulation/univariate/file4/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0009725559976818024
+Linear interpolation average MSE: 0.207793
+Nearest interpolation average MSE: 0.290005
+
+LSTM Masked MSE on test set: 0.050306
+outputs/simulation/univariate/file5/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0016049563988362592
+Linear interpolation average MSE: 0.244492
+Nearest interpolation average MSE: 0.279839
+
+LSTM Masked MSE on test set: 0.023804
+outputs/simulation/univariate/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0009188502061342541
+Linear interpolation average MSE: 0.311390
+Nearest interpolation average MSE: 0.339915
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Multi] Masked MSE on test set:0.7145475751323358
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Multi] Masked MSE on test set:0.039978548247238684
+LSTM Masked MSE on test set: 0.013641
+outputs/prediction_mask/univariate/file3/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.06767639517784119
+Linear interpolation average MSE: 1631.323608
+Nearest interpolation average MSE: 1.997879
+
+LSTM Masked MSE on test set: 0.039810
+outputs/prediction_mask/univariate/file3/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl192/
+Masked MSE on test set:0.07460107803344726
+Linear interpolation average MSE: 3512.141602
+Nearest interpolation average MSE: 2.015327
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl128/
+[Multi] Masked MSE on test set:0.028387106533708243
+LSTM Masked MSE on test set: 0.003485
+outputs/prediction_mask/univariate/file4/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl64/
+Masked MSE on test set:0.08034262657165528
+Linear interpolation average MSE: 679.322754
+Nearest interpolation average MSE: 1.955475
+
+LSTM Masked MSE on test set: 0.003402
+outputs/prediction_mask/univariate/file4/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.03942486643791199
+Linear interpolation average MSE: 2508.922852
+Nearest interpolation average MSE: 1.956129
+
+LSTM Masked MSE on test set: 0.015498
+outputs/simulation/univariate/high_correlation/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0019395556998125373
+Linear interpolation average MSE: 0.006364
+Nearest interpolation average MSE: 0.002911
+
+outputs/simulation/multivariate/high_correlation/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.5004224351555081
+LSTM Masked MSE on test set: 0.015385
+outputs/simulation/univariate/high_correlation/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0024730395824513972
+Linear interpolation average MSE: 0.006364
+Nearest interpolation average MSE: 0.002911
+
+LSTM Masked MSE on test set: 0.013891
+outputs/simulation/univariate/high_correlation/file3/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.002276935679389831
+Linear interpolation average MSE: 0.006672
+Nearest interpolation average MSE: 0.002477
+
+LSTM Masked MSE on test set: 0.020609
+outputs/simulation/univariate/high_correlation/file4/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.002193253148685802
+Linear interpolation average MSE: 0.007030
+Nearest interpolation average MSE: 0.002602
+
+LSTM Masked MSE on test set: 0.014890
+outputs/simulation/univariate/high_correlation/file5/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.12043192042386468
+Linear interpolation average MSE: 0.006531
+Nearest interpolation average MSE: 0.002909
+
+outputs/prediction_mask/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.029036279437185702
+LSTM Masked MSE on test set: 0.015477
+outputs/simulation/univariate/high_correlation/file1/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.002642544833096591
+Linear interpolation average MSE: 0.006364
+Nearest interpolation average MSE: 0.002911
+
+LSTM Masked MSE on test set: 0.015839
+outputs/simulation/univariate/high_correlation/file2/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0040995861119765015
+Linear interpolation average MSE: 0.006364
+Nearest interpolation average MSE: 0.002911
+
+LSTM Masked MSE on test set: 0.014553
+outputs/simulation/univariate/high_correlation/file3/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0018491893209875586
+Linear interpolation average MSE: 0.006672
+Nearest interpolation average MSE: 0.002477
+
+LSTM Masked MSE on test set: 0.019407
+outputs/simulation/univariate/high_correlation/file4/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.28149118270466034
+Linear interpolation average MSE: 0.007030
+Nearest interpolation average MSE: 0.002602
+
+LSTM Masked MSE on test set: 0.014952
+outputs/simulation/univariate/high_correlation/file5/s512_t128_o0_lm15_mr0.2_nh8_nl5_bs32_lr0.75_dr0.2_pl128/
+Masked MSE on test set:0.0016944335106222387
+Linear interpolation average MSE: 0.006531
+Nearest interpolation average MSE: 0.002909
+
+outputs/simulation/multivariate/high_correlation/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.46052589390536264
+outputs/simulation/multivariate/high_correlation/s512_t128_o0_lm30_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.8141296297669767
+outputs/simulation/multivariate/high_correlation/s512_t128_o0_lm30_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.2884704935628002
+outputs/clinic/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.016302370365731463
+outputs/clinic/multivariate/s512_t128_o0_lm15_mr0.2_nh8_lr0.75_dr0.2_bs16_nl5_pl192/
+[TimeXer] Masked MSE on test set:0.04119123962210135
+outputs/clinic/multivariate/correlation/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.011996545546450042
+outputs/clinic/multivariate/correlation_lag_model/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.02805303687732608
+outputs/simulation/multivariate/high_correlation/correlation_model/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.02723104710781783
+outputs/simulation/multivariate/high_correlation/correlation_model/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.0005092387872579606
+outputs/prediction_mask/multivariate/multi_model/clinic/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[Baseline] Masked MSE on test set:0.25320069402711004
+[2D] Masked MSE on test set:0.04176787491683122
+
+
+outputs/prediction_mask/multivariate/multi_model/clinic/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[TimeXer] Masked MSE on test set:0.12530592102125304
+outputs/prediction_mask/multivariate/multi_model/clinic/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.04290944286900708
+outputs/prediction_mask/multivariate/correlation_model/clinic/s512_t128_o0_lm15_mr0.2_nh4_lr0.75_dr0.2_bs16_nl5_pl192/
+[Multi] Masked MSE on test set:0.04345519609649248

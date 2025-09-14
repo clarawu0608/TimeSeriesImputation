@@ -480,57 +480,57 @@ scheduler_ind = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_ind, T_max=
 ind_output_path = output_path + "ind/"
 os.makedirs(ind_output_path, exist_ok=True)
 
-# best_val_loss = float('inf')
-# early_stop_counter = 0
-# train_losses, val_losses = [], []
+best_val_loss = float('inf')
+early_stop_counter = 0
+train_losses, val_losses = [], []
 
-# for epoch in range(epoch_num):
-#     model_ind.train()
-#     train_loss = 0
-#     for gt, masked, mask in train_loader:
-#         gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
+for epoch in range(epoch_num):
+    model_ind.train()
+    train_loss = 0
+    for gt, masked, mask in train_loader:
+        gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
         
-#         # Transpose to (B, D, L)
-#         gt = gt.transpose(1, 2)
-#         masked = masked.transpose(1, 2)
-#         mask = mask.transpose(1, 2)
+        # Transpose to (B, D, L)
+        gt = gt.transpose(1, 2)
+        masked = masked.transpose(1, 2)
+        mask = mask.transpose(1, 2)
 
-#         optimizer_ind.zero_grad()
-#         out = model_ind(masked, mask)  # (B, D, L)
-#         loss = criterion(out, gt, mask, args.loss_r)
-#         loss.backward()
-#         optimizer_ind.step()
-#         train_loss += loss.item()
+        optimizer_ind.zero_grad()
+        out = model_ind(masked, mask)  # (B, D, L)
+        loss = criterion(out, gt, mask, args.loss_r)
+        loss.backward()
+        optimizer_ind.step()
+        train_loss += loss.item()
 
-#     model_ind.eval()
-#     val_loss = 0
-#     with torch.no_grad():
-#         for gt, masked, mask in val_loader:
-#             gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-#             gt = gt.transpose(1, 2)
-#             masked = masked.transpose(1, 2)
-#             mask = mask.transpose(1, 2)
+    model_ind.eval()
+    val_loss = 0
+    with torch.no_grad():
+        for gt, masked, mask in val_loader:
+            gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+            gt = gt.transpose(1, 2)
+            masked = masked.transpose(1, 2)
+            mask = mask.transpose(1, 2)
 
-#             out = model_ind(masked, mask)
-#             loss = criterion(out, gt, mask, args.loss_r)
-#             val_loss += loss.item()
+            out = model_ind(masked, mask)
+            loss = criterion(out, gt, mask, args.loss_r)
+            val_loss += loss.item()
 
-#     train_losses.append(train_loss / len(train_loader))
-#     val_losses.append(val_loss / len(val_loader))
-#     print(f"[Ind] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
+    train_losses.append(train_loss / len(train_loader))
+    val_losses.append(val_loss / len(val_loader))
+    print(f"[Ind] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
 
-#     scheduler_ind.step()
+    scheduler_ind.step()
 
-#     if val_losses[-1] < best_val_loss:
-#         best_val_loss = val_losses[-1]
-#         early_stop_counter = 0
-#         torch.save(model_ind.state_dict(), ind_output_path + "best_model.pth")
-#         last_attn_weights = model_ind.attn_weights
-#     else:
-#         early_stop_counter += 1
-#         if early_stop_counter >= 5:
-#             print("[Ind] Early stopping")
-#             break
+    if val_losses[-1] < best_val_loss:
+        best_val_loss = val_losses[-1]
+        early_stop_counter = 0
+        torch.save(model_ind.state_dict(), ind_output_path + "best_model.pth")
+        last_attn_weights = model_ind.attn_weights
+    else:
+        early_stop_counter += 1
+        if early_stop_counter >= 5:
+            print("[Ind] Early stopping")
+            break
 
 # Test independent model
 

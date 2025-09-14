@@ -18,7 +18,7 @@ parser.add_argument("--nhead", type=int, default=8)
 parser.add_argument("--dropout", type=float, default=0.1)  
 parser.add_argument("--batch_size", type=int, default=16)
 parser.add_argument("--seq_len", type=int, default=64)
-parser.add_argument("--missing_type", type=int, default=1)
+parser.add_argument("--pred_len", type=int, default=0)
 parser.add_argument("--lm", type=int, default=10)
 parser.add_argument("--missing_rate", type=float, default=0.25)
 parser.add_argument("--token_t_size", type=int, default=8)
@@ -26,6 +26,7 @@ parser.add_argument("--token_t_overlap", type=int, default=0)
 parser.add_argument("--token_d_size", type=int, default=8)
 parser.add_argument("--token_d_overlap", type=int, default=0)
 parser.add_argument("--loss_r", type=float, default=0.65)
+parser.add_argument("--missing_type", type=int, default=0, choices=[0, 1], help="0: Gaussian missing, 1: Prediction missing")
 args = parser.parse_args()
 
 # Device setup
@@ -39,11 +40,10 @@ os.makedirs(output_path, exist_ok=True)
 
 # Read data
 df = pd.read_csv(args.data_path, parse_dates=["date"])
-df = df.sort_values("date")
 data = df.iloc[:, 1:].values.astype(np.float32)  # multivariate data
 timestamps = df["date"].values
-dt_seconds = (timestamps[1] - timestamps[0]) / np.timedelta64(1, 's')
-sampling_rate = 1 / dt_seconds
+# dt_seconds = (timestamps[1] - timestamps[0]) / np.timedelta64(1, 's')
+# sampling_rate = 1 / dt_seconds
 
 # Normalize for each column
 data_mean = np.mean(data, axis=0)
@@ -66,6 +66,59 @@ def generate_mask_matrix_from_paper(length, lm=5, r=0.15, seed=None):
         i += unmasked_len
     return mask
 
+# prediction mask generation
+def generate_prediction_mask(sequence_len, seq_len, pred_len):
+    """
+    Generate a mask where:
+    - The sequence is divided into chunks of size `seq_len`.
+    - For each full chunk, the last `pred_len` elements are masked.
+    - For the last partial chunk (if any), mask `int(round(chunk_len * (pred_len / seq_len)))` elements.
+    
+    Args:
+        sequence_len: Total length of the mask.
+        seq_len: Length of each full chunk.
+        pred_len: Number of masked elements per full chunk.
+    
+    Returns:
+        Boolean mask (True = unmasked, False = masked).
+    """
+    mask = np.ones(sequence_len, dtype=bool)
+    
+    # Process full chunks
+    for start in range(0, sequence_len, seq_len):
+        end = start + seq_len
+        if end > sequence_len:
+            break  # handle the last partial chunk separately
+        mask[end - pred_len : end] = False
+    
+    # Process the last partial chunk (if any)
+    remaining = sequence_len % seq_len
+    if remaining > 0:
+        last_chunk_start = sequence_len - remaining
+        last_chunk_len = remaining
+        prop_masked = int(round(last_chunk_len * (pred_len / seq_len)))
+        prop_masked = max(0, min(prop_masked, last_chunk_len))  # ensure valid range
+        if prop_masked > 0:
+            mask[last_chunk_start + last_chunk_len - prop_masked : sequence_len] = False
+    
+    return mask
+
+def generate_prediction_mask_fixed(seq_len, pred_len):
+    """
+    Generate a mask for a fixed sequence length where the last `pred_len` elements are masked.
+    
+    Args:
+        seq_len (int): Total length of the sequence.
+        pred_len (int): Number of elements to mask at the end.
+    
+    Returns:
+        np.ndarray: Boolean mask (True = unmasked, False = masked).
+    """
+    mask = np.ones(seq_len, dtype=bool)
+    if pred_len > 0:
+        mask[-pred_len:] = False
+    return mask
+
 T, D = data.shape
 mask_matrix = np.ones((T, D), dtype=bool)
 if args.missing_type == 0:
@@ -74,7 +127,10 @@ if args.missing_type == 0:
     mask_matrix.flat[missing_indices] = False
 elif args.missing_type == 1:
     for d in range(D):
-        mask_matrix[:, d] = generate_mask_matrix_from_paper(T, lm=args.lm, r=args.missing_rate, seed=42 + d)
+        if args.missing_type == 0:
+            mask_matrix[:, d] = generate_mask_matrix_from_paper(T, lm=args.lm, r=args.missing_rate, seed=42 + d)
+        elif args.missing_type == 1:
+            mask_matrix[:, d] = generate_prediction_mask(T, seq_len=args.seq_len, pred_len=args.lm)
 
 masked_data = data.copy()
 masked_data[~mask_matrix] = 0.0
@@ -114,10 +170,16 @@ class TimeSeriesDataset(Dataset):
         return self.data.shape[0] - self.seq_len
 
     def __getitem__(self, idx):
+        if args.missing_type == 0:
+            mask = self.mask[idx:idx+self.seq_len]
+        elif args.missing_type == 1:
+            mask = np.zeros((args.seq_len, self.data.shape[1]), dtype=bool)
+            for d in range(self.data.shape[1]):
+                mask[:, d] = generate_prediction_mask_fixed(seq_len=args.seq_len, pred_len=args.pred_len)
         return (
             self.data[idx:idx+self.seq_len],
             self.masked_data[idx:idx+self.seq_len],
-            self.mask[idx:idx+self.seq_len]
+            mask
         )
 
 full_dataset = TimeSeriesDataset(data, masked_data, mask_matrix, args.seq_len)
@@ -137,6 +199,7 @@ class Patch2DEmbedding(nn.Module):
         self.token_t_overlap = token_t_overlap
         self.token_d_size = token_d_size
         self.token_d_overlap = token_d_overlap
+        # print(f"Patch2DEmbedding: token_t_size={token_t_size}, token_s_size={token_d_size}, d_model={d_model}")
         self.linear = nn.Linear(token_t_size * token_d_size, d_model)
 
     def forward(self, x):  # (B, T, D)
@@ -182,15 +245,17 @@ class CustomTransformerEncoderLayer(nn.Module):
         src2 = self.linear2(self.dropout(torch.relu(self.linear1(src))))
         return self.norm2(src + self.dropout2(src2))
 
-class TransformerEncoder(nn.Module):
-    def __init__(self, d_model=64, nhead=args.nhead, num_layers=args.num_layers):
+class twoDTransformerEncoder(nn.Module):
+    def __init__(self, args=args):
         super().__init__()
         # Patch2DEmbedding input: (B, T, D)
         # Output: (B, N_patches, d_model)
+        self.args = args
+        d_model = args.token_t_size * args.nhead  # d_model = token_t_size * nhead
         self.embed = Patch2DEmbedding(
             args.token_t_size, args.token_t_overlap,
             args.token_d_size, args.token_d_overlap,
-            d_model
+            d_model=d_model
         )
 
         # PositionalEncoding input: (B, N_patches, d_model)
@@ -199,8 +264,8 @@ class TransformerEncoder(nn.Module):
 
         # Transformer layers process (B, N_patches, d_model)
         self.layers = nn.ModuleList([
-            CustomTransformerEncoderLayer(d_model, nhead)
-            for _ in range(num_layers)
+            CustomTransformerEncoderLayer(d_model, args.nhead)
+            for _ in range(args.num_layers)
         ])
 
         # Final projection maps (B, N_patches, d_model) → (B, N_patches, patch_size)
@@ -208,6 +273,7 @@ class TransformerEncoder(nn.Module):
         self.project = nn.Linear(d_model, args.token_t_size * args.token_d_size)
 
     def forward(self, x, mask):
+        B, T, D = x.shape
         # Input: x, mask → (B, T, D)
         x = torch.where(mask, x, 0.0)  # (B, T, D)
 
@@ -218,6 +284,13 @@ class TransformerEncoder(nn.Module):
             x_embed = layer(x_embed)  # remains (B, N_patches, d_model)
 
         out = self.project(x_embed)  # → (B, N_patches, patch_size)
+        out = reconstruct_from_patches(
+            out, B=B, T=T, D=D,
+            token_t_size=self.args.token_t_size,
+            token_t_overlap=self.args.token_t_overlap,
+            token_d_size=self.args.token_d_size,
+            token_d_overlap=self.args.token_d_overlap
+        )
         return out
     
 
@@ -399,8 +472,8 @@ def denormalize(x, mean, std):
         raise ValueError(f"Unsupported x shape: {x.shape}")
     
 
+# Multiscale independent imputation
 
-# Independently imputation
 class IndependentPatchEmbedding(nn.Module):
     def __init__(self, token_size, d_model):
         super().__init__()
@@ -408,6 +481,109 @@ class IndependentPatchEmbedding(nn.Module):
 
     def forward(self, x):
         return self.linear(x)
+
+class TransformerEncoder(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.token_sizes = [int(args.seq_len / 16), int(args.seq_len / 8), int(args.seq_len / 4), int(args.seq_len / 2)]
+        self.nhead = args.nhead
+        self.num_layers = args.num_layers
+        self.seq_len = args.seq_len
+        self.token_overlap = args.token_t_overlap
+
+        self.mask_token = nn.Parameter(torch.randn(1))
+
+        self.branches = nn.ModuleList()
+        self.num_patches_list = []
+
+        for token_size in self.token_sizes:
+            d_model = token_size * args.nhead  # d_model should be a multiple of nhead
+            branch = nn.ModuleDict({
+                'embed': IndependentPatchEmbedding(token_size, d_model),
+                'pos_encoder': PositionalEncoding(d_model=d_model),
+                'layers': nn.ModuleList([CustomTransformerEncoderLayer(d_model, args.nhead) for _ in range(self.num_layers)]),
+                'reconstructor': nn.Linear(d_model * (((args.seq_len - token_size) // (token_size - self.token_overlap)) + 1), args.seq_len)
+            })
+            self.num_patches_list.append(((args.seq_len - token_size) // (token_size - self.token_overlap)) + 1)
+            self.branches.append(branch)
+
+        # Learnable combination weights
+        self.alpha = nn.Parameter(torch.ones(len(self.token_sizes)))  # raw weights, softmax later
+
+    def forward(self, x, mask=None):
+        B, L = x.shape
+        x_masked = torch.where(mask, x, self.mask_token.expand_as(x))
+        # x_masked=x
+
+        outputs = []
+        for i, token_size in enumerate(self.token_sizes):
+            branch = self.branches[i]
+            stride = token_size - self.token_overlap
+
+            # Patchify
+            patches = x_masked.unfold(1, token_size, stride)  # (B, num_patches, token_size)
+
+            # Embedding + Positional Encoding
+            x_embed = branch['embed'](patches)
+            x_pos = branch['pos_encoder'](x_embed)
+
+            # Transformer Layers
+            x_trans = x_pos
+            for layer in branch['layers']:
+                x_trans = layer(x_trans)
+            
+            # Flatten and reconstruct
+            x_flat = x_trans.reshape(B, -1)
+            out = branch['reconstructor'](x_flat)  # (B, seq_len)
+            outputs.append(out)
+
+        # Combine outputs using softmax-weighted sum
+        weights = torch.softmax(self.alpha, dim=0)  # shape (4,)
+        out_combined = sum(w * o for w, o in zip(weights, outputs))
+
+        # return out_combined, weights, outputs
+        return out_combined, weights
+    
+class MultiscaleIndependentTransformerEncoder(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.D = args.token_d_size
+        self.seq_len = args.seq_len
+        self.mask_token = nn.Parameter(torch.randn(1))
+
+        # Create one multiscale TransformerEncoder per variate
+        self.branch_models = nn.ModuleList([
+            TransformerEncoder(args) for _ in range(self.D)
+        ])
+
+    def forward(self, x, mask=None):
+        # x: (B, D, L), mask: (B, D, L)
+        B, D, L = x.shape
+        outputs = []
+        all_weights = []
+
+        for d in range(self.D):
+            x_d = x[:, d, :]                   # (B, L)
+            mask_d = mask[:, d, :] if mask is not None else torch.ones_like(x_d, dtype=torch.bool)
+            x_d_masked = torch.where(mask_d, x_d, self.mask_token.expand_as(x_d))
+
+            # Forward through the d-th branch
+            out_d, weights_d = self.branch_models[d](x_d_masked, mask_d)
+            outputs.append(out_d.unsqueeze(1))  # (B, 1, L)
+            all_weights.append(weights_d.unsqueeze(1))  # (1, 4) -> (B, 1, 4)
+
+        # Stack outputs: (B, D, L=seq_len)
+        imputed = torch.cat(outputs, dim=1)
+        # Stack weights: (B, D, 4)
+        weights = torch.cat(all_weights, dim=1)
+
+        return imputed
+
+    
+
+
+# Independently imputation
+
 
 
 class IndependentTransformerEncoder(nn.Module):
@@ -489,8 +665,8 @@ class FusionBlock(nn.Module):
 class HybridImputer(nn.Module):
     def __init__(self, args):
         super().__init__()
-        self.indep_encoder = IndependentTransformerEncoder(args)
-        self.twod_encoder = TransformerEncoder()
+        self.indep_encoder = MultiscaleIndependentTransformerEncoder(args)
+        self.twod_encoder = twoDTransformerEncoder()
         self.fusion_type = "cross_attn"  # "add", "concat", "cross_attn"
         if self.fusion_type == "cross_attn":
             self.fusion = FusionBlock(d_model=args.seq_len)
@@ -515,205 +691,222 @@ class HybridImputer(nn.Module):
             return self.fusion(out_indep, out_2d)
         
 # Train and test the hybrid model     
-model_hyb = HybridImputer(args).to(device)
-criterion = MaskedWeightedMSELoss()
-optimizer_hyb = torch.optim.Adam(model_hyb.parameters(), lr=1e-3)
-scheduler_hyb = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_hyb, T_max=epoch_num)
+# model_hyb = HybridImputer(args).to(device)
+# criterion = MaskedWeightedMSELoss()
+# optimizer_hyb = torch.optim.Adam(model_hyb.parameters(), lr=1e-3)
+# scheduler_hyb = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_hyb, T_max=epoch_num)
 
-hyb_output_path = output_path + "hybrid/"
-os.makedirs(hyb_output_path, exist_ok=True)
+# hyb_output_path = output_path + "hybrid/"
+# os.makedirs(hyb_output_path, exist_ok=True)
 
-best_val_loss = float('inf')
-early_stop_counter = 0
-train_losses, val_losses = [], []
+# best_val_loss = float('inf')
+# early_stop_counter = 0
+# train_losses, val_losses = [], []
 
-for epoch in range(epoch_num):
-    model_hyb.train()
-    train_loss = 0
-    for gt, masked, mask in train_loader:
-        gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
+# for epoch in range(epoch_num):
+#     model_hyb.train()
+#     train_loss = 0
+#     for gt, masked, mask in train_loader:
+#         gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
         
 
-        optimizer_hyb.zero_grad()
-        out = model_hyb(masked, mask)  # (B, D, L)
-        loss = criterion(out, gt, mask, args.loss_r)
-        loss.backward()
-        optimizer_hyb.step()
-        train_loss += loss.item()
+#         optimizer_hyb.zero_grad()
+#         out = model_hyb(masked, mask)  # (B, D, L)
+#         loss = criterion(out, gt, mask, args.loss_r)
+#         loss.backward()
+#         optimizer_hyb.step()
+#         train_loss += loss.item()
 
-    model_hyb.eval()
-    val_loss = 0
-    with torch.no_grad():
-        for gt, masked, mask in val_loader:
-            gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+#     model_hyb.eval()
+#     val_loss = 0
+#     with torch.no_grad():
+#         for gt, masked, mask in val_loader:
+#             gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
 
-            out = model_hyb(masked, mask)
-            loss = criterion(out, gt, mask, args.loss_r)
-            val_loss += loss.item()
+#             out = model_hyb(masked, mask)
+#             loss = criterion(out, gt, mask, args.loss_r)
+#             val_loss += loss.item()
 
-    train_losses.append(train_loss / len(train_loader))
-    val_losses.append(val_loss / len(val_loader))
-    print(f"[Hybrid] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
+#     train_losses.append(train_loss / len(train_loader))
+#     val_losses.append(val_loss / len(val_loader))
+#     print(f"[Hybrid] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
 
-    scheduler_hyb.step()
+#     scheduler_hyb.step()
 
-    if val_losses[-1] < best_val_loss:
-        best_val_loss = val_losses[-1]
-        early_stop_counter = 0
-        torch.save(model_hyb.state_dict(), hyb_output_path + "best_model.pth")
-    else:
-        early_stop_counter += 1
-        if early_stop_counter >= 5:
-            print("[Hybrid] Early stopping")
-            break
+#     if val_losses[-1] < best_val_loss:
+#         best_val_loss = val_losses[-1]
+#         early_stop_counter = 0
+#         torch.save(model_hyb.state_dict(), hyb_output_path + "best_model.pth")
+#     else:
+#         early_stop_counter += 1
+#         if early_stop_counter >= 5:
+#             print("[Hybrid] Early stopping")
+#             break
 
-# Test independent model
+# # Test hybrid model
+# model_hyb.load_state_dict(torch.load(hyb_output_path + "best_model.pth"))
+# model_hyb.eval()
+# mse_total, count = 0, 0
 
-model_hyb.load_state_dict(torch.load(hyb_output_path + "best_model.pth"))
-model_hyb.eval()
-mse_total, count = 0, 0
+# for i, (gt, masked, mask) in enumerate(test_loader):
+#     gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
 
-for i, (gt, masked, mask) in enumerate(test_loader):
-    gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
-    # gt = gt.transpose(1, 2)
-    # masked = masked.transpose(1, 2)
-    # mask = mask.transpose(1, 2)
+#     with torch.no_grad():
+#         out = model_hyb(masked, mask)  # (B, D, L)
 
-    with torch.no_grad():
-        out = model_hyb(masked, mask)  # (B, D, L)
+#     gt_np = gt.cpu().numpy().squeeze()
+#     out_np = out.cpu().numpy().squeeze()
+#     mask_np = mask.cpu().numpy().squeeze()
 
-    gt_np = gt[0].cpu().numpy()       # (D, L)
-    out_np = out[0].cpu().numpy()
-    mask_np = mask[0].cpu().numpy()
+#     if gt_np.ndim == 1: gt_np = gt_np[np.newaxis, :]
+#     if out_np.ndim == 1: out_np = out_np[np.newaxis, :]
+#     if mask_np.ndim == 1: mask_np = mask_np[np.newaxis, :]
 
-
-    if args.missing_rate != 0:
-        mse_total += ((out_np[~mask_np] - gt_np[~mask_np]) ** 2).sum()
-        count += (~mask_np).sum()
-    else:
-        mse_total += ((out_np - gt_np) ** 2).sum()
-        count += mask_np.sum()
+#     gt_denorm = denormalize(gt_np, data_mean, data_std)
+#     out_denorm = denormalize(out_np, data_mean, data_std)
 
 
-print("[Hybrid] Masked MSE on test set:", mse_total / count)
-print("[Hybrid] Working directory:", os.getcwd())
-with open("test_results.txt", "a") as log_file:
-    log_file.write(output_path + "\n")
-    log_file.write("[Hybrid] Masked MSE on test set:" + str(mse_total / count) + "\n")
+#     if i < 2:
+#         os.makedirs(f"{hyb_output_path}/test_case_{i}/", exist_ok=True)
+#         for j in range (0, D):
+#             plt.figure()
+#             plt.plot(gt_denorm[0, :, j], label="GT")
+#             plt.plot(out_denorm[0, :, j], label="Output")
+#             plt.plot(mask_np[0, :, j] * np.max(gt_denorm[:, 0]), label="Mask")
+#             plt.legend()
+#             plt.title(f"Hybrid Test Case {i} column {j}")
+#             plt.savefig(f"{hyb_output_path}/test_case_{i}/column_{j}.png")
+
+
+#     if args.missing_rate != 0:
+#         mse_total += ((out_np[~mask_np] - gt_np[~mask_np]) ** 2).sum()
+#         count += (~mask_np).sum()
+#     else:
+#         mse_total += ((out_np - gt_np) ** 2).sum()
+#         count += mask_np.sum()
+
+
+# print("[Hybrid] Masked MSE on test set:", mse_total / count)
+# print("[Hybrid] Working directory:", os.getcwd())
+# with open("test_results.txt", "a") as log_file:
+#     log_file.write(output_path + "\n")
+#     log_file.write("[Hybrid] Masked MSE on test set:" + str(mse_total / count) + "\n")
 
 
 
 # Train independent model
 
-model_ind = IndependentTransformerEncoder().to(device)
-criterion = MaskedWeightedMSELoss()
-optimizer_ind = torch.optim.Adam(model_ind.parameters(), lr=1e-3)
-scheduler_ind = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_ind, T_max=epoch_num)
+# model_ind = MultiscaleIndependentTransformerEncoder(args).to(device)
+# criterion = MaskedWeightedMSELoss()
+# optimizer_ind = torch.optim.Adam(model_ind.parameters(), lr=1e-3)
+# scheduler_ind = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer_ind, T_max=epoch_num)
 
-ind_output_path = output_path + "ind/"
-os.makedirs(ind_output_path, exist_ok=True)
+# ind_output_path = output_path + "ind/"
+# os.makedirs(ind_output_path, exist_ok=True)
 
-best_val_loss = float('inf')
-early_stop_counter = 0
-train_losses, val_losses = [], []
+# best_val_loss = float('inf')
+# early_stop_counter = 0
+# train_losses, val_losses = [], []
 
-for epoch in range(epoch_num):
-    model_ind.train()
-    train_loss = 0
-    for gt, masked, mask in train_loader:
-        gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
+# for epoch in range(epoch_num):
+#     model_ind.train()
+#     train_loss = 0
+#     for gt, masked, mask in train_loader:
+#         gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
         
-        # Transpose to (B, D, L)
-        gt = gt.transpose(1, 2)
-        masked = masked.transpose(1, 2)
-        mask = mask.transpose(1, 2)
+#         # Transpose to (B, D, L)
+#         # gt = gt.transpose(1, 2)
+#         # masked = masked.transpose(1, 2)
+#         # mask = mask.transpose(1, 2)
 
-        optimizer_ind.zero_grad()
-        out = model_ind(masked, mask)  # (B, D, L)
-        loss = criterion(out, gt, mask, args.loss_r)
-        loss.backward()
-        optimizer_ind.step()
-        train_loss += loss.item()
+#         optimizer_ind.zero_grad()
+#         out = model_ind(masked.transpose(1, 2), mask.transpose(1, 2)).transpose(1, 2)  # (B, L, D)
+#         loss = criterion(out, gt, mask, args.loss_r)
+#         loss.backward()
+#         optimizer_ind.step()
+#         train_loss += loss.item()
 
-    model_ind.eval()
-    val_loss = 0
-    with torch.no_grad():
-        for gt, masked, mask in val_loader:
-            gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-            gt = gt.transpose(1, 2)
-            masked = masked.transpose(1, 2)
-            mask = mask.transpose(1, 2)
+#     model_ind.eval()
+#     val_loss = 0
+#     with torch.no_grad():
+#         for gt, masked, mask in val_loader:
+#             gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+#             # gt = gt.transpose(1, 2)
+#             # masked = masked.transpose(1, 2)
+#             # mask = mask.transpose(1, 2)
 
-            out = model_ind(masked, mask)
-            loss = criterion(out, gt, mask, args.loss_r)
-            val_loss += loss.item()
+#             out = model_ind(masked.transpose(1, 2), mask.transpose(1, 2)).transpose(1, 2)  # (B, L, D)
+#             loss = criterion(out, gt, mask, args.loss_r)
+#             val_loss += loss.item()
 
-    train_losses.append(train_loss / len(train_loader))
-    val_losses.append(val_loss / len(val_loader))
-    print(f"[Ind] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
+#     train_losses.append(train_loss / len(train_loader))
+#     val_losses.append(val_loss / len(val_loader))
+#     print(f"[Ind] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
 
-    scheduler_ind.step()
+#     scheduler_ind.step()
 
-    if val_losses[-1] < best_val_loss:
-        best_val_loss = val_losses[-1]
-        early_stop_counter = 0
-        torch.save(model_ind.state_dict(), ind_output_path + "best_model.pth")
-        last_attn_weights = model_ind.attn_weights
-    else:
-        early_stop_counter += 1
-        if early_stop_counter >= 5:
-            print("[Ind] Early stopping")
-            break
+#     if val_losses[-1] < best_val_loss:
+#         best_val_loss = val_losses[-1]
+#         early_stop_counter = 0
+#         torch.save(model_ind.state_dict(), ind_output_path + "best_model.pth")
+#         # last_attn_weights = model_ind.attn_weights
+#     else:
+#         early_stop_counter += 1
+#         if early_stop_counter >= 5:
+#             print("[Ind] Early stopping")
+#             break
 
-# Test independent model
+# # Test independent model
 
-model_ind.load_state_dict(torch.load(ind_output_path + "best_model.pth"))
-model_ind.eval()
-mse_total, count = 0, 0
+# model_ind.load_state_dict(torch.load(ind_output_path + "best_model.pth"))
+# model_ind.eval()
+# mse_total, count = 0, 0
 
-for i, (gt, masked, mask) in enumerate(test_loader):
-    gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
-    gt = gt.transpose(1, 2)
-    masked = masked.transpose(1, 2)
-    mask = mask.transpose(1, 2)
+# for i, (gt, masked, mask) in enumerate(test_loader):
+#     gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)  # (B, L, D)
+#     # gt = gt.transpose(1, 2)
+#     # masked = masked.transpose(1, 2)
+#     # mask = mask.transpose(1, 2)
 
-    with torch.no_grad():
-        out = model_ind(masked, mask)  # (B, D, L)
+#     with torch.no_grad():
+#         out = model_ind(masked.transpose(1, 2), mask.transpose(1, 2)).transpose(1, 2)  # (B, L, D)
 
-    gt_np = gt[0].cpu().numpy()       # (D, L)
-    out_np = out[0].cpu().numpy()
-    mask_np = mask[0].cpu().numpy()
+#     gt_np = gt.cpu().numpy().squeeze()
+#     out_np = out.cpu().numpy().squeeze()
+#     mask_np = mask.cpu().numpy().squeeze()
 
-    # gt_np = gt_np.transpose(0, 1)
-    # out_np = out_np.transpose(0, 1)
-    # mask_np = mask_np.transpose(0, 1)
+#     if gt_np.ndim == 1: gt_np = gt_np[np.newaxis, :]
+#     if out_np.ndim == 1: out_np = out_np[np.newaxis, :]
+#     if mask_np.ndim == 1: mask_np = mask_np[np.newaxis, :]
 
-    # gt_denorm = denormalize(gt_np, data_std, data_mean)
-    # out_denorm = denormalize(out_np, data_std, data_mean)
+#     gt_denorm = denormalize(gt_np, data_mean, data_std)
+#     out_denorm = denormalize(out_np, data_mean, data_std)
 
-    if args.missing_rate != 0:
-        mse_total += ((out_np[~mask_np] - gt_np[~mask_np]) ** 2).sum()
-        count += (~mask_np).sum()
-    else:
-        mse_total += ((out_np - gt_np) ** 2).sum()
-        count += mask_np.sum()
+#     if i < 2:
+#         os.makedirs(f"{ind_output_path}/test_case_{i}/", exist_ok=True)
+#         for j in range (0, D):
+#             plt.figure()
+#             plt.plot(gt_denorm[0, :, j], label="GT")
+#             plt.plot(out_denorm[0, :, j], label="Output")
+#             plt.plot(mask_np[0, :, j] * np.max(gt_denorm[:, 0]), label="Mask")
+#             plt.legend()
+#             plt.title(f"Independent Test Case {i} column {j}")
+#             plt.savefig(f"{ind_output_path}/test_case_{i}/column_{j}.png")
 
-    # if i < 2:
-    #     for d in range(gt_np.shape[0]):
-    #         plt.figure()
-    #         plt.plot(gt_denorm[d], label="GT")
-    #         plt.plot(out_denorm[d], label="Output")
-    #         plt.plot(mask_np[d] * max(gt_denorm[d]), label="Mask")
-    #         plt.legend()
-    #         plt.title(f"Test Case {i}, Variate {d}")
-    #         plt.savefig(f"{ind_output_path}test_case_{i}_variate_{d}.png")
+#     if args.missing_rate != 0:
+#         mse_total += ((out_np[~mask_np] - gt_np[~mask_np]) ** 2).sum()
+#         count += (~mask_np).sum()
+#     else:
+#         mse_total += ((out_np - gt_np) ** 2).sum()
+#         count += mask_np.sum()
 
-print("[Ind] Masked MSE on test set:", mse_total / count)
-print("[Ind] Working directory:", os.getcwd())
-with open("test_results.txt", "a") as log_file:
-    log_file.write(output_path + "\n")
-    log_file.write("[Ind] Masked MSE on test set:" + str(mse_total / count) + "\n")
+    
 
+# print("[Ind] Masked MSE on test set:", mse_total / count)
+# print("[Ind] Working directory:", os.getcwd())
+# with open("test_results.txt", "a") as log_file:
+#     log_file.write(output_path + "\n")
+#     log_file.write("[Ind] Masked MSE on test set:" + str(mse_total / count) + "\n")
 
 
 
@@ -816,7 +1009,7 @@ for i, (gt, masked, mask) in enumerate(test_loader):
 
     if i < 2:
         os.makedirs(f"{baseline_output_path}/test_case_{i}/", exist_ok=True)
-        for j in range (0, 20):
+        for j in range (0, D):
             plt.figure()
             plt.plot(gt_denorm[0, :, j], label="GT")
             plt.plot(out_denorm[0, :, j], label="Output")
@@ -848,141 +1041,141 @@ for i in range(len(baseline_model.layers)):
 
 
 # 2D Model initialization
-model = TransformerEncoder().to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epoch_num)
+# model = twoDTransformerEncoder().to(device)
+# optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+# scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epoch_num)
 
-twoD_output_path = output_path + "2D/"
-os.makedirs(twoD_output_path, exist_ok=True)
+# twoD_output_path = output_path + "2D/"
+# os.makedirs(twoD_output_path, exist_ok=True)
 
-# Training and Validation
-best_val_loss = float('inf')
-early_stop_counter = 0
-train_losses, val_losses = [], []
+# # Training and Validation
+# best_val_loss = float('inf')
+# early_stop_counter = 0
+# train_losses, val_losses = [], []
 
-for epoch in range(epoch_num):
-    model.train()
-    train_loss = 0
-    for gt, masked, mask in train_loader:
-        gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-        optimizer.zero_grad()
-        out = model(masked, mask)
-        recon = reconstruct_from_patches(
-            out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
-            token_t_size=args.token_t_size,
-            token_t_overlap=args.token_t_overlap,
-            token_d_size=args.token_d_size,
-            token_d_overlap=args.token_d_overlap
-        )
-        loss = criterion(recon, gt, mask, args.loss_r)
-        loss.backward()
-        optimizer.step()
-        train_loss += loss.item()
+# for epoch in range(epoch_num):
+#     model.train()
+#     train_loss = 0
+#     for gt, masked, mask in train_loader:
+#         gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+#         optimizer.zero_grad()
+#         recon = model(masked, mask)
+#         # recon = reconstruct_from_patches(
+#         #     out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
+#         #     token_t_size=args.token_t_size,
+#         #     token_t_overlap=args.token_t_overlap,
+#         #     token_d_size=args.token_d_size,
+#         #     token_d_overlap=args.token_d_overlap
+#         # )
+#         loss = criterion(recon, gt, mask, args.loss_r)
+#         loss.backward()
+#         optimizer.step()
+#         train_loss += loss.item()
 
-    model.eval()
-    val_loss = 0
-    with torch.no_grad():
-        for gt, masked, mask in val_loader:
-            gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-            out = model(masked, mask)
-            recon = reconstruct_from_patches(
-                out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
-                token_t_size=args.token_t_size,
-                token_t_overlap=args.token_t_overlap,
-                token_d_size=args.token_d_size,
-                token_d_overlap=args.token_d_overlap
-            )
-            loss = criterion(recon, gt, mask, args.loss_r)
-            val_loss += loss.item()
+#     model.eval()
+#     val_loss = 0
+#     with torch.no_grad():
+#         for gt, masked, mask in val_loader:
+#             gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+#             recon = model(masked, mask)
+#             # recon = reconstruct_from_patches(
+#             #     out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
+#             #     token_t_size=args.token_t_size,
+#             #     token_t_overlap=args.token_t_overlap,
+#             #     token_d_size=args.token_d_size,
+#             #     token_d_overlap=args.token_d_overlap
+#             # )
+#             loss = criterion(recon, gt, mask, args.loss_r)
+#             val_loss += loss.item()
 
-    train_losses.append(train_loss / len(train_loader))
-    val_losses.append(val_loss / len(val_loader))
-    print(f"[2D] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
+#     train_losses.append(train_loss / len(train_loader))
+#     val_losses.append(val_loss / len(val_loader))
+#     print(f"[2D] Epoch {epoch}, Train Loss: {train_losses[-1]:.4f}, Val Loss: {val_losses[-1]:.4f}")
 
-    scheduler.step()
+#     scheduler.step()
 
-    if val_losses[-1] < best_val_loss:
-        best_val_loss = val_losses[-1]
-        early_stop_counter = 0
-        torch.save(model.state_dict(), f"{twoD_output_path}/best_model.pth")
-    else:
-        early_stop_counter += 1
-        if early_stop_counter >= 5:
-            print("[2D] Early stopping")
-            break
+#     if val_losses[-1] < best_val_loss:
+#         best_val_loss = val_losses[-1]
+#         early_stop_counter = 0
+#         torch.save(model.state_dict(), f"{twoD_output_path}/best_model.pth")
+#     else:
+#         early_stop_counter += 1
+#         if early_stop_counter >= 5:
+#             print("[2D] Early stopping")
+#             break
 
-# Plot loss curve
-plt.figure()
-plt.plot(train_losses, label="Train")
-plt.plot(val_losses, label="Val")
-plt.legend()
-plt.title("Loss Curve")
-plt.savefig(f"{twoD_output_path}/loss_curve.png")
-
-
-
-# Load best model for evaluation
-model.load_state_dict(torch.load(f"{twoD_output_path}/best_model.pth"))
-model.eval()
-
-# Evaluation
-mse_total, count = 0.0, 0
-for i, (gt, masked, mask) in enumerate(test_loader):
-    gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
-    with torch.no_grad():
-        out = model(masked, mask)
-        out = reconstruct_from_patches(
-            out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
-            token_t_size=args.token_t_size,
-            token_t_overlap=args.token_t_overlap,
-            token_d_size=args.token_d_size,
-            token_d_overlap=args.token_d_overlap
-        )
-
-    gt_np = gt.cpu().numpy().squeeze()
-    if gt_np.ndim == 1:
-        gt_np = gt_np[np.newaxis, :]
-    out_np = out.cpu().numpy().squeeze()
-    if out_np.ndim == 1:
-        out_np = out_np[np.newaxis, :]
-    mask_np = mask.cpu().numpy().squeeze()
-    if mask_np.ndim == 1:
-        mask_np = mask_np[np.newaxis, :]
+# # Plot loss curve
+# plt.figure()
+# plt.plot(train_losses, label="Train")
+# plt.plot(val_losses, label="Val")
+# plt.legend()
+# plt.title("Loss Curve")
+# plt.savefig(f"{twoD_output_path}/loss_curve.png")
 
 
-    gt_denorm = denormalize(gt_np, data_mean, data_std)
-    out_denorm = denormalize(out_np, data_mean, data_std)
 
-    mse = ((gt_np[~mask_np] - out_np[~mask_np])**2).sum()
-    mse_total += mse
-    count += (~mask_np).sum()
+# # Load best model for evaluation
+# model.load_state_dict(torch.load(f"{twoD_output_path}/best_model.pth"))
+# model.eval()
 
-    if i < 2:
-        os.makedirs(f"{twoD_output_path}/test_case_{i}/", exist_ok=True)
-        for j in range (0, 20):
-            plt.figure()
-            plt.plot(gt_denorm[0, :, j], label="GT")
-            plt.plot(out_denorm[0, :, j], label="Output")
-            plt.plot(mask_np[0, :, j] * np.max(gt_denorm[:, 0]), label="Mask")
-            plt.legend()
-            plt.title(f"Baseline Test Case {i} column {j}")
-            plt.savefig(f"{twoD_output_path}/test_case_{i}/column_{j}.png")
+# # Evaluation
+# mse_total, count = 0.0, 0
+# for i, (gt, masked, mask) in enumerate(test_loader):
+#     gt, masked, mask = gt.to(device), masked.to(device), mask.to(device)
+#     with torch.no_grad():
+#         out = model(masked, mask)
+#         # out = reconstruct_from_patches(
+#         #     out, B=gt.shape[0], T=gt.shape[1], D=gt.shape[2],
+#         #     token_t_size=args.token_t_size,
+#         #     token_t_overlap=args.token_t_overlap,
+#         #     token_d_size=args.token_d_size,
+#         #     token_d_overlap=args.token_d_overlap
+#         # )
 
-print("[2D] Masked MSE on test set:", mse_total / count)
-with open("test_results.txt", "a") as log_file:
-    print("[2D] Writing to file...")
-    log_file.write("[2D] Masked MSE on test set:" + str(mse_total / count) + "\n" + "\n" + "\n")
+#     gt_np = gt.cpu().numpy().squeeze()
+#     if gt_np.ndim == 1:
+#         gt_np = gt_np[np.newaxis, :]
+#     out_np = out.cpu().numpy().squeeze()
+#     if out_np.ndim == 1:
+#         out_np = out_np[np.newaxis, :]
+#     mask_np = mask.cpu().numpy().squeeze()
+#     if mask_np.ndim == 1:
+#         mask_np = mask_np[np.newaxis, :]
 
 
-# Plot attention map
-for i in range(len(model.layers)):
-    if hasattr(model.layers[i], 'attn_weights') and model.layers[i].attn_weights is not None:
-        attn_map = model.layers[-1].attn_weights[0].cpu().numpy()
-        plt.figure(figsize=(6, 5))
-        plt.imshow(attn_map, cmap='viridis')
-        plt.colorbar()
-        plt.title("Attention Map Layer {}".format(i))
-        plt.savefig(f"{twoD_output_path}/attention_map_layer{i}.png")
+#     gt_denorm = denormalize(gt_np, data_mean, data_std)
+#     out_denorm = denormalize(out_np, data_mean, data_std)
+
+#     mse = ((gt_np[~mask_np] - out_np[~mask_np])**2).sum()
+#     mse_total += mse
+#     count += (~mask_np).sum()
+
+#     if i < 2:
+#         os.makedirs(f"{twoD_output_path}/test_case_{i}/", exist_ok=True)
+#         for j in range (0, D):
+#             plt.figure()
+#             plt.plot(gt_denorm[0, :, j], label="GT")
+#             plt.plot(out_denorm[0, :, j], label="Output")
+#             plt.plot(mask_np[0, :, j] * np.max(gt_denorm[:, 0]), label="Mask")
+#             plt.legend()
+#             plt.title(f"Baseline Test Case {i} column {j}")
+#             plt.savefig(f"{twoD_output_path}/test_case_{i}/column_{j}.png")
+
+# print("[2D] Masked MSE on test set:", mse_total / count)
+# with open("test_results.txt", "a") as log_file:
+#     print("[2D] Writing to file...")
+#     log_file.write("[2D] Masked MSE on test set:" + str(mse_total / count) + "\n" + "\n" + "\n")
+
+
+# # Plot attention map
+# for i in range(len(model.layers)):
+#     if hasattr(model.layers[i], 'attn_weights') and model.layers[i].attn_weights is not None:
+#         attn_map = model.layers[-1].attn_weights[0].cpu().numpy()
+#         plt.figure(figsize=(6, 5))
+#         plt.imshow(attn_map, cmap='viridis')
+#         plt.colorbar()
+#         plt.title("Attention Map Layer {}".format(i))
+#         plt.savefig(f"{twoD_output_path}/attention_map_layer{i}.png")
 
 
 
